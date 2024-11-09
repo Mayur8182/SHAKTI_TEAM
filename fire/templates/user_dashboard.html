@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard - AEK NOC System</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.0.3/dist/tailwind.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="{{ url_for('static', filename='styles.css') }}" rel="stylesheet">
+    <style>
+        .custom-container {
+            max-width: 800px;
+            margin: auto;
+            padding: 2rem;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100">
+    <div class="custom-container bg-white p-6 rounded-lg shadow-lg mt-10">
+        <h1 class="text-2xl font-bold mb-4">User Dashboard</h1>
+
+        <!-- NOC Application Form -->
+        <div class="mb-6">
+            <h2 class="text-xl font-semibold mb-4">Fire NOC Application Form</h2>
+            <form id="documentForm" action="/upload" method="post" enctype="multipart/form-data">
+                <fieldset class="mb-6 p-4 border border-gray-300 rounded-lg">
+                    <legend class="text-xl font-semibold mb-4">Personal Information</legend>
+                    <div class="form-group">
+                        <label for="firstName" class="form-label">First Name:</label>
+                        <input type="text" id="firstName" name="firstName" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="lastName" class="form-label">Last Name:</label>
+                        <input type="text" id="lastName" name="lastName" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="address" class="form-label">Address:</label>
+                        <input type="text" id="address" name="address" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="phone" class="form-label">Phone Number:</label>
+                        <input type="tel" id="phone" name="phone" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email" class="form-label">Email:</label>
+                        <input type="email" id="email" name="email" class="form-control" required>
+                    </div>
+                </fieldset>
+
+                <!-- Document Uploads -->
+                <fieldset class="mb-6 p-4 border border-gray-300 rounded-lg">
+                    <legend class="text-xl font-semibold mb-4">Upload Required Documents</legend>
+                    <div class="form-group">
+                        <label for="identityProof" class="form-label">Identity Proof (Aadhaar Card or PAN Card):</label>
+                        <input type="file" id="identityProof" name="identityProof" class="form-control-file" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="propertyDocuments" class="form-label">Property Documents:</label>
+                        <input type="file" id="propertyDocuments" name="propertyDocuments" class="form-control-file" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="sitePlan" class="form-label">Site Plan/Layout:</label>
+                        <input type="file" id="sitePlan" name="sitePlan" class="form-control-file" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="fireSafetyPlan" class="form-label">Fire Safety Plan:</label>
+                        <input type="file" id="fireSafetyPlan" name="fireSafetyPlan" class="form-control-file" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="neighborNOC" class="form-label">NOC from Neighbors (if applicable):</label>
+                        <input type="file" id="neighborNOC" name="neighborNOC" class="form-control-file">
+                    </div>
+                    <div class="form-group">
+                        <label for="equipmentInvoice" class="form-label">Fire Equipment Purchase Invoice (if applicable):</label>
+                        <input type="file" id="equipmentInvoice" name="equipmentInvoice" class="form-control-file">
+                    </div>
+                    <div class="form-group">
+                        <label for="complianceCertificate" class="form-label">Compliance Certificate:</label>
+                        <input type="file" id="complianceCertificate" name="complianceCertificate" class="form-control-file">
+                    </div>
+                </fieldset>
+
+                <!-- Submit Button -->
+                <button type="submit" class="btn btn-primary w-full">Submit Application</button>
+            </form>
+        </div>
+
+        <!-- Applications Table -->
+        <div class="table-responsive mt-4">
+            <h2 class="text-xl font-semibold mb-4">Submitted Applications</h2>
+            <table class="table table-striped" id="applicationsTable">
+                <thead>
+                    <tr>
+                        <th>Application ID</th>
+                        <th>Documents</th>
+                        <th>Status</th>
+                        <th>Submission Time</th>
+                        <th>Generate Report</th>
+                    </tr>
+                </thead>
+                <tbody id="applicationsBody">
+                    <!-- Application rows will be updated here via WebSocket -->
+                    {% for app in applications %}
+                    <tr>
+                        <td>{{ app._id }}</td>
+                        <td>
+                            <ul>
+                                <li>Identity Proof: {{ app.documents.identity }}</li>
+                                <li>Property Documents: {{ app.documents.property }}</li>
+                                <li>Site Plan: {{ app.documents.sitePlan }}</li>
+                                <li>Fire Safety Plan: {{ app.documents.fireSafety }}</li>
+                                <li>NOC from Neighbors: {{ app.documents.neighborNOC }}</li>
+                                <li>Equipment Invoice: {{ app.documents.equipmentInvoice }}</li>
+                                <li>Compliance Certificate: {{ app.documents.compliance }}</li>
+                            </ul>
+                        </td>
+                        <td id="status-{{ app._id }}">{{ app.status }}</td>
+                        <td>{{ app.timestamp | datetime }}</td>
+                        <td>
+                            <button class="btn btn-secondary" onclick="generateReport('{{ app._id }}')">Generate Report</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.0.11/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <!-- WebSocket for Real-Time Updates -->
+    <script>
+        const socket = new WebSocket('ws://localhost:5000/real-time-updates');
+        
+        socket.onmessage = function (event) {
+            const data = JSON.parse(event.data);
+            const statusElement = document.getElementById('status-' + data.applicationId);
+            if (statusElement) {
+                statusElement.innerText = data.newStatus;
+            }
+        };
+    </script>
+
+    <!-- Client-Side Validation for File Upload -->
+    <script>
+        document.getElementById('documentForm').addEventListener('submit', function (e) {
+            const validExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
+            const fields = ['identityProof', 'propertyDocuments', 'sitePlan', 'fireSafetyPlan', 'neighborNOC', 'equipmentInvoice', 'complianceCertificate'];
+
+            for (const field of fields) {
+                const fileInput = document.getElementById(field);
+                if (fileInput.files.length > 0) {
+                    const ext = fileInput.value.split('.').pop().toLowerCase();
+                    if (!validExtensions.includes(ext)) {
+                        alert('Please upload valid files (PDF, JPG, JPEG, PNG).');
+                        e.preventDefault();
+                        return;
+                    }
+                }
+            }
+        });
+
+        function generateReport(applicationId) {
+            // This function will send a request to the server to generate a report for the given application ID
+            fetch(`/generate-report/${applicationId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Report generated successfully! You can download it from your dashboard.');
+                    } else {
+                        alert('Error generating report. Please try again later.');
+                    }
+                })
+                .catch(error => {
+                    alert('An error occurred while generating the report.');
+                });
+        }
+    </script>
+</body>
+
+</html>

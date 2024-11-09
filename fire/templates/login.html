@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - AEK NOC System</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="{{ url_for('static', filename='styles.css') }}" rel="stylesheet">
+    <style>
+        /* Background Image and Overlay */
+        body {
+            background: url('https://fireprotectionservices.co.uk/wp-content/uploads/2019/11/fire-safety-scaled-2560x1280-1.jpg') no-repeat center center fixed;
+            background-size: cover;
+            color: #f8f9fa;
+        }
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1;
+        }
+        .container {
+            position: relative;
+            z-index: 2;
+        }
+        /* Card Styling */
+        .card {
+            border-radius: 10px;
+            overflow: hidden;
+            background-color: rgba(255, 255, 255, 0.85); /* Light overlay for readability */
+        }
+        .card-header {
+            background: #990000; /* Dark red for header to match fire safety theme */
+            color: #ffffff;
+            text-align: center;
+        }
+        .card-body {
+            padding: 2rem;
+        }
+        /* Logo Styling */
+        .logo {
+            width: 80px; /* Set width */
+            height: 80px; /* Set height to the same value as width for a square shape */
+            border-radius: 50%; /* Make it circular */
+            object-fit: cover; /* Maintain aspect ratio and cover */
+            display: block;
+            margin: 0 auto 1rem;
+        }
+        /* Form Styling */
+        .form-group label {
+            font-weight: bold;
+            color: #333;
+        }
+        .form-control {
+            border-radius: 8px;
+        }
+        .btn-primary {
+            background-color: #990000;
+            border-color: #990000;
+        }
+        .btn-primary:hover {
+            background-color: #b30000;
+            border-color: #b30000;
+        }
+        /* Link Styling */
+        .text-center a {
+            color: #990000;
+        }
+    </style>
+</head>
+<body>
+    <div class="overlay"></div>
+    <div class="container">
+        <div class="row justify-content-center align-items-center vh-100">
+            <div class="col-md-6">
+                <div class="card shadow">
+                    <div class="card-header">
+                        <img src="https://tse3.mm.bing.net/th?id=OIP.8LC-0Es7mqVzfE_ElrEdDQAAAA&pid=Api&P=0&h=180" alt="Company Logo" class="logo">
+                        <h3 class="mb-0">Login</h3>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" action="{{ url_for('login') }}">
+                            {{ form.hidden_tag() }}
+                            <div class="form-group">
+                                {{ form.username.label(class="form-label") }}
+                                {{ form.username(class="form-control") }}
+                                {% if form.username.errors %}
+                                    <div class="text-danger">{{ form.username.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="form-group">
+                                {{ form.password.label(class="form-label") }}
+                                {{ form.password(class="form-control") }}
+                                {% if form.password.errors %}
+                                    <div class="text-danger">{{ form.password.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="form-group">
+                                {{ form.submit(class="btn btn-primary btn-block") }}
+                            </div>
+                        </form>
+                        <div class="text-center">
+                            <a href="{{ url_for('register') }}">Create an account</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

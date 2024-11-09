@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home - Application Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script> <!-- For FontAwesome icons -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script> <!-- For GIS integration -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" /> <!-- For GIS integration -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.5/gsap.min.js"></script> <!-- For GSAP animations -->
+    <style>
+        #map { height: 400px; width: 100%; }
+        .hero-bg {
+            background-image: url('https://fireprotectionservices.co.uk/wp-content/uploads/2019/11/fire-safety-scaled-2560x1280-1.jpg');
+            background-size: cover;
+            background-position: center;
+        }
+        .card {
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+    <!-- Navigation Bar -->
+    <nav class="bg-white shadow-lg">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <img src="https://tse3.mm.bing.net/th?id=OIP.8LC-0Es7mqVzfE_ElrEdDQAAAA&pid=Api&P=0&h=180" alt="Logo" class="h-12">
+            <a href="/" class="text-3xl font-bold text-red-600 hover:text-red-700 transition duration-300">Application Portal</a>
+            <div>
+                <a href="/login" class="px-4 py-2 text-gray-700 hover:text-red-600 border-b-2 border-transparent hover:border-red-600 transition duration-300">Login</a>
+                <a href="/register" class="px-4 py-2 text-gray-700 hover:text-red-600 border-b-2 border-transparent hover:border-red-600 transition duration-300">Register</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-bg text-white py-24">
+        <div class="container mx-auto px-6 text-center">
+            <h1 class="text-5xl font-extrabold mb-6">Welcome to the Application Portal</h1>
+            <p class="text-lg mb-8">Manage your applications, documents, and approvals seamlessly with real-time updates.</p>
+            <a href="/register" class="bg-red-600 text-white px-8 py-4 font-semibold rounded-lg shadow-md hover:bg-red-700 transition duration-300">Get Started</a>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="py-20 bg-gray-100">
+        <div class="container mx-auto px-6">
+            <h2 class="text-4xl font-extrabold text-center mb-12">Our Features</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="card bg-white p-8 rounded-lg shadow-lg text-center">
+                    <h3 class="text-3xl font-semibold mb-4 text-red-600">Real-time Tracking</h3>
+                    <p>Monitor your application status with real-time updates and alerts.</p>
+                </div>
+                <div class="card bg-white p-8 rounded-lg shadow-lg text-center">
+                    <h3 class="text-3xl font-semibold mb-4 text-red-600">AI-Based Verification</h3>
+                    <p>Automatic document verification powered by AI, ensuring faster approvals.</p>
+                </div>
+                <div class="card bg-white p-8 rounded-lg shadow-lg text-center">
+                    <h3 class="text-3xl font-semibold mb-4 text-red-600">Secure Dashboard</h3>
+                    <p>Manage all your applications, approvals, and follow-ups in one secure place.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- On-Site Inspection Request Section -->
+    <section class="py-20 bg-gray-100">
+        <div class="container mx-auto px-6">
+            <h2 class="text-4xl font-extrabold text-center mb-10">Request On-Site Inspection</h2>
+            <form id="inspectionForm" action="/inspection-request" method="POST" class="max-w-lg mx-auto bg-white p-8 rounded-lg shadow-lg">
+                <div class="mb-6">
+                    <label for="location" class="block text-gray-700 font-semibold mb-2">Inspection Location</label>
+                    <input type="text" id="location" name="location" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 transition duration-300" required>
+                </div>
+                <div class="mb-6">
+                    <label for="details" class="block text-gray-700 font-semibold mb-2">Inspection Details</label>
+                    <textarea id="details" name="details" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 transition duration-300" rows="4" required></textarea>
+                </div>
+                <div class="mb-6">
+                    <label for="images" class="block text-gray-700 font-semibold mb-2">Upload Images</label>
+                    <input type="file" id="images" name="images" class="w-full text-gray-700 file:border file:border-gray-300 file:bg-gray-100 file:px-4 file:py-2 file:rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 transition duration-300" multiple>
+                </div>
+                <button type="submit" class="w-full bg-red-600 text-white py-3 rounded-lg hover:bg-red-700 transition duration-300 font-semibold">
+                    Request Inspection
+                </button>
+                <div id="formFeedback" class="mt-4 text-center text-red-600 hidden"></div>
+            </form>
+        </div>
+    </section>
+
+    <!-- NOC Application Section -->
+    <section class="py-20 bg-gray-100">
+        <div class="container mx-auto px-6 text-center">
+            <h2 class="text-4xl font-extrabold mb-10">Apply for NOC</h2>
+            <p class="text-lg mb-8">Fill out the application form to apply for your No Objection Certificate.</p>
+            <a href="/apply-noc" class="bg-red-600 text-white px-10 py-4 rounded-lg font-semibold hover:bg-red-700 transition duration-300">Apply for NOC</a>
+        </div>
+    </section>
+
+    <!-- GIS Integration Section -->
+    <section class="py-20 bg-gray-100">
+        <div class="container mx-auto px-6">
+            <h2 class="text-4xl font-extrabold text-center mb-10">Interactive Map</h2>
+            <div id="map"></div>
+        </div>
+    </section>
+
+    <!-- Fire Department Area Section -->
+    <section class="py-20 bg-white">
+        <div class="container mx-auto px-6 text-center">
+            <h2 class="text-4xl font-extrabold mb-10">Fire Department Services</h2>
+            <p class="text-lg mb-8">Our platform supports various services for the Fire Department, including incident reporting and emergency notifications. Stay informed and take action quickly with our integrated solutions.</p>
+            <a href="/fire-department" class="bg-red-600 text-white px-10 py-4 rounded-lg font-semibold hover:bg-red-700 transition duration-300">Learn More</a>
+        </div>
+    </section>
+
+    <!-- Call to Action Section -->
+    <section class="bg-white py-20">
+        <div class="container mx-auto px-6 text-center">
+            <h2 class="text-4xl font-extrabold mb-6">Ready to get started?</h2>
+            <p class="text-lg mb-10">Sign up today and manage all your applications effortlessly!</p>
+            <a href="/register" class="bg-red-600 text-white px-10 py-4 rounded-lg font-semibold hover:bg-red-700 transition duration-300">Sign Up Now</a>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="py-20 bg-gray-100">
+        <div class="container mx-auto px-6">
+            <h2 class="text-4xl font-extrabold text-center mb-10">What Our Users Say</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="p-8 bg-white rounded-lg shadow-lg">
+                    <p class="mb-4">"This platform has streamlined my application process. I love the real-time updates!"</p>
+                    <p class="font-semibold">- User A</p>
+                </div>
+                <div class="p-8 bg-white rounded-lg shadow-lg">
+                    <p class="mb-4">"The AI verification saved me a lot of time. I can't believe how quickly my application was processed!"</p>
+                    <p class="font-semibold">- User B</p>
+                </div>
+                <div class="p-8 bg-white rounded-lg shadow-lg">
+                    <p class="mb-4">"The support and resources available here are excellent. Highly recommend!"</p>
+                    <p class="font-semibold">- User C</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-6">
+        <div class="container mx-auto text-center">
+            <p>&copy; 2024 Application Portal. All rights reserved.</p>
+            <div class="flex justify-center mt-2">
+                <a href="#" class="text-white mx-4 hover:text-red-400">Privacy Policy</a>
+                <a href="#" class="text-white mx-4 hover:text-red-400">Terms of Service</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Initialize the map
+        var map = L.map('map').setView([20.5937, 78.9629], 5); // Centered on India
+
+        // Add OpenStreetMap tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        // Add a marker
+        var marker = L.marker([20.5937, 78.9629]).addTo(map).bindPopup('Your location').openPopup();
+
+        // Form validation and AJAX for real-time updates
+        document.getElementById('inspectionForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent form submission
+
+            const location = document.getElementById('location').value;
+            const details = document.getElementById('details').value;
+
+            // Basic validation
+            if (!location || !details) {
+                document.getElementById('formFeedback').innerText = "All fields are required.";
+                document.getElementById('formFeedback').classList.remove('hidden');
+                return;
+            }
+
+            // Simulate AJAX request
+            setTimeout(() => {
+                document.getElementById('formFeedback').innerText = "Inspection request submitted successfully!";
+                document.getElementById('formFeedback').classList.remove('hidden');
+                gsap.to("#formFeedback", { duration: 1, opacity: 1 }); // Animate feedback
+            }, 500);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - AEK NOC System</title>
+    <!-- Tailwind CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Background Image */
+        body {
+            background: url('https://th.bing.com/th/id/OIP.yIK5VIUK-Wt5QMukWjJ7WQHaDt?w=329&h=175&c=7&r=0&o=5&dpr=1.3&pid=1.7') no-repeat center center fixed;
+            background-size: cover;
+        }
+        /* Overlay for readability */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1;
+        }
+        .container {
+            position: relative;
+            z-index: 2;
+        }
+        /* Custom Form Card */
+        .form-card {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        }
+        /* Logo Styling */
+        .logo {
+            width: 80px;
+            height: auto;
+            display: block;
+            margin: 0 auto 1rem;
+            border-radius: 50%; /* Rounded logo */
+        }
+        /* Text Colors */
+        h2, label {
+            color: #990000; /* Dark Red Color */
+        }
+        /* Custom Button Styling */
+        button {
+            background-color: #990000; /* Dark Red */
+            color: #fff;
+        }
+        button:hover {
+            background-color: #b30000; /* Lighter Red on hover */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+    <div class="overlay"></div>
+    <div class="container flex items-center justify-center min-h-screen">
+        <div class="form-card w-full max-w-md p-8">
+            <!-- Company Logo -->
+            <img src="https://tse3.mm.bing.net/th?id=OIP.8LC-0Es7mqVzfE_ElrEdDQAAAA&pid=Api&P=0&h=180" alt="Company Logo" class="logo">
+            <h2 class="text-3xl font-bold mb-6 text-center">Register</h2>
+
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} fade show" role="alert">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- Registration Form -->
+            <form action="{{ url_for('register') }}" method="POST" class="needs-validation" novalidate>
+                {{ form.hidden_tag() }} <!-- CSRF Token -->
+
+                <!-- Username Input -->
+                <div class="form-group mb-4">
+                    <label for="username" class="block font-bold mb-2">Username</label>
+                    {{ form.username(class="form-control px-4 py-2 border border-gray-300 rounded shadow-sm", placeholder="Username") }}
+                    <div class="invalid-feedback">Please enter a valid username.</div>
+                </div>
+
+                <!-- Full Name Input -->
+                <div class="form-group mb-4">
+                    <label for="name" class="block font-bold mb-2">Full Name</label>
+                    {{ form.name(class="form-control px-4 py-2 border border-gray-300 rounded shadow-sm", placeholder="John Doe") }}
+                    <div class="invalid-feedback">Please enter your full name.</div>
+                </div>
+
+                <!-- Email Input -->
+                <div class="form-group mb-4">
+                    <label for="email" class="block font-bold mb-2">Email Address</label>
+                    {{ form.email(class="form-control px-4 py-2 border border-gray-300 rounded shadow-sm", placeholder="admin@example.com") }}
+                    <div class="invalid-feedback">Please provide a valid email address.</div>
+                </div>
+
+                <!-- Password Input -->
+                <div class="form-group mb-4">
+                    <label for="password" class="block font-bold mb-2">Password</label>
+                    {{ form.password(class="form-control px-4 py-2 border border-gray-300 rounded shadow-sm", placeholder="••••••••") }}
+                    <div class="invalid-feedback">Please enter a password.</div>
+                </div>
+
+                <!-- Confirm Password Input -->
+                <div class="form-group mb-4">
+                    <label for="confirm-password" class="block font-bold mb-2">Confirm Password</label>
+                    {{ form.confirm_password(class="form-control px-4 py-2 border border-gray-300 rounded shadow-sm", placeholder="••••••••") }}
+                    <div class="invalid-feedback">Passwords do not match.</div>
+                </div>
+
+                <!-- Role Selection -->
+                <div class="form-group mb-4">
+                    <label for="role" class="block font-bold mb-2">Register As</label>
+                    {{ form.role(class="form-select px-4 py-2 border border-gray-300 rounded shadow-sm") }}
+                    <div class="invalid-feedback">Please select a role.</div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="form-group">
+                    <button type="submit" class="w-full py-2 rounded-md hover:bg-indigo-700 transition duration-200 ease-in-out font-bold">
+                        Register
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS (Optional) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- JavaScript for form validation -->
+    <script>
+        (function () {
+            'use strict';
+            var forms = document.querySelectorAll('.needs-validation');
+            Array.prototype.slice.call(forms)
+                .forEach(function (form) {
+                    form.addEventListener('submit', function (event) {
+                        if (!form.checkValidity()) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+                        form.classList.add('was-validated');
+                    }, false);
+                });
+        })();
+    </script>
+</body>
+</html>
