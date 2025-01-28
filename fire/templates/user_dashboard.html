@@ -4,186 +4,517 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Dashboard - AEK NOC System</title>
-    <!-- Bootstrap CSS -->
+    <title>AEK NOC System - User Dashboard</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Tailwind CSS -->
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.0.3/dist/tailwind.min.css" rel="stylesheet">
-    <!-- Custom CSS -->
-    <link href="{{ url_for('static', filename='styles.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        .custom-container {
-            max-width: 800px;
-            margin: auto;
-            padding: 2rem;
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #1e40af;
+            --accent-color: #059669;
         }
-    </style>
+
+        body {
+            background: #f8fafc;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .sidebar {
+            background: var(--primary-color);
+            color: white;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            padding: 0.75rem 1rem;
+            margin: 0.5rem 0;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            background: var(--secondary-color);
+            color: white;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.875rem;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .status-approved {
+            background: #dcfce7;
+            color: #059669;
+        }
+
+        .document-card {
+            border: 2px dashed #cbd5e1;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            transition: all 0.3s ease;
+        }
+
+        .document-card:hover {
+            border-color: var(--primary-color);
+            background: #f8fafc;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--accent-color);
+            width: 0;
+            transition: width 0.5s ease;
+        }
+
+        .animated {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .step {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            color: #666;
+            cursor: pointer;
+        }
+
+        .step.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>    
 </head>
 
-<body class="bg-gray-100">
-    <div class="custom-container bg-white p-6 rounded-lg shadow-lg mt-10">
-        <h1 class="text-2xl font-bold mb-4">User Dashboard</h1>
+<body>
+    <div class="dashboard-container">
+        <div class="d-flex">
+            <!-- Sidebar -->
+            <div class="sidebar w-64">
+                <div class="text-center mb-8">
+                    <img src="/logo.png" alt="AEK Logo" class="w-24 h-24 mx-auto mb-4">
+                    <h2 class="text-xl font-bold">AEK NOC System</h2>
+                </div>
+                <nav class="space-y-2">
+                    <button class="nav-link w-full text-left" onclick="showSection('dashboard')">
+                        <i class="fas fa-home mr-2"></i> Dashboard
+                    </button>
+                    <button class="nav-link w-full text-left" onclick="showSection('fire-noc')">
+                        <i class="fas fa-fire-extinguisher mr-2"></i> Fire NOC
+                    </button>
+                    <button class="nav-link w-full text-left" onclick="showSection('inspections')">
+                        <i class="fas fa-clipboard-check mr-2"></i> Inspections
+                    </button>
+                    <button class="nav-link w-full text-left" onclick="showSection('licenses')">
+                        <i class="fas fa-file-contract mr-2"></i> Licenses
+                    </button>
+                    <button class="nav-link w-full text-left" onclick="showSection('reports')">
+                        <i class="fas fa-chart-bar mr-2"></i> Reports
+                    </button>
+                </nav>
+            </div>
 
-        <!-- NOC Application Form -->
-        <div class="mb-6">
-            <h2 class="text-xl font-semibold mb-4">Fire NOC Application Form</h2>
-            <form id="documentForm" action="/upload" method="post" enctype="multipart/form-data">
-                <fieldset class="mb-6 p-4 border border-gray-300 rounded-lg">
-                    <legend class="text-xl font-semibold mb-4">Personal Information</legend>
-                    <div class="form-group">
-                        <label for="firstName" class="form-label">First Name:</label>
-                        <input type="text" id="firstName" name="firstName" class="form-control" required>
+            <!-- Main Content -->
+            <div class="main-content flex-1">
+                <!-- Dashboard Section -->
+                <section id="dashboard" class="section-content animated">
+                    <h1 class="text-3xl font-bold mb-6">Welcome, [User Name]</h1>
+                    
+                    <!-- Application Progress -->
+                    <div class="bg-white p-6 rounded-lg shadow-sm mb-8">
+                        <h3 class="text-xl font-semibold mb-4">Application Progress</h3>
+                        <div class="progress-bar mb-4">
+                            <div class="progress-fill" style="width: 65%"></div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-4">
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-primary">2</div>
+                                <div class="text-gray-600">Pending Applications</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-green-600">5</div>
+                                <div class="text-gray-600">Approved Applications</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-blue-600">3</div>
+                                <div class="text-gray-600">Upcoming Inspections</div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="lastName" class="form-label">Last Name:</label>
-                        <input type="text" id="lastName" name="lastName" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="address" class="form-label">Address:</label>
-                        <input type="text" id="address" name="address" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="phone" class="form-label">Phone Number:</label>
-                        <input type="tel" id="phone" name="phone" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="email" class="form-label">Email:</label>
-                        <input type="email" id="email" name="email" class="form-control" required>
-                    </div>
-                </fieldset>
 
-                <!-- Document Uploads -->
-                <fieldset class="mb-6 p-4 border border-gray-300 rounded-lg">
-                    <legend class="text-xl font-semibold mb-4">Upload Required Documents</legend>
-                    <div class="form-group">
-                        <label for="identityProof" class="form-label">Identity Proof (Aadhaar Card or PAN Card):</label>
-                        <input type="file" id="identityProof" name="identityProof" class="form-control-file" required>
+                    <!-- Quick Actions -->
+                    <div class="grid grid-cols-2 gap-6 mb-8">
+                        <div class="bg-blue-50 p-6 rounded-lg cursor-pointer hover:bg-blue-100 transition">
+                            <h4 class="font-semibold mb-2">New Fire NOC Application</h4>
+                            <p class="text-gray-600 mb-4">Start your new fire safety certification process</p>
+                            <button class="btn btn-primary" onclick="showSection('fire-noc')">
+                                Start Application <i class="fas fa-arrow-right ml-2"></i>
+                            </button>
+                        </div>
+                        <div class="bg-green-50 p-6 rounded-lg cursor-pointer hover:bg-green-100 transition">
+                            <h4 class="font-semibold mb-2">Request Inspection</h4>
+                            <p class="text-gray-600 mb-4">Schedule a safety inspection for your premises</p>
+                            <button class="btn btn-success" onclick="showSection('inspections')">
+                                Schedule Now <i class="fas fa-calendar-alt ml-2"></i>
+                            </button>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="propertyDocuments" class="form-label">Property Documents:</label>
-                        <input type="file" id="propertyDocuments" name="propertyDocuments" class="form-control-file" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="sitePlan" class="form-label">Site Plan/Layout:</label>
-                        <input type="file" id="sitePlan" name="sitePlan" class="form-control-file" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="fireSafetyPlan" class="form-label">Fire Safety Plan:</label>
-                        <input type="file" id="fireSafetyPlan" name="fireSafetyPlan" class="form-control-file" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="neighborNOC" class="form-label">NOC from Neighbors (if applicable):</label>
-                        <input type="file" id="neighborNOC" name="neighborNOC" class="form-control-file">
-                    </div>
-                    <div class="form-group">
-                        <label for="equipmentInvoice" class="form-label">Fire Equipment Purchase Invoice (if applicable):</label>
-                        <input type="file" id="equipmentInvoice" name="equipmentInvoice" class="form-control-file">
-                    </div>
-                    <div class="form-group">
-                        <label for="complianceCertificate" class="form-label">Compliance Certificate:</label>
-                        <input type="file" id="complianceCertificate" name="complianceCertificate" class="form-control-file">
-                    </div>
-                </fieldset>
 
-                <!-- Submit Button -->
-                <button type="submit" class="btn btn-primary w-full">Submit Application</button>
-            </form>
+                    <!-- Recent Activities -->
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <h3 class="text-xl font-semibold mb-4">Recent Activities</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+                                <div>
+                                    <div class="font-medium">Fire NOC Application Submitted</div>
+                                    <div class="text-sm text-gray-500">2025-01-20 14:32</div>
+                                </div>
+                                <span class="status-indicator status-pending">Pending Review</span>
+                            </div>
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+                                <div>
+                                    <div class="font-medium">Inspection Scheduled</div>
+                                    <div class="text-sm text-gray-500">2025-01-25 10:00</div>
+                                </div>
+                                <span class="status-indicator status-approved">Confirmed</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+<!-- Fire NOC Application Section -->
+<section id="fire-noc" class="section-content hidden animated">
+    <!-- Multi-step Form -->
+    <div class="bg-white p-6 rounded-lg shadow-sm">
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold mb-2">Fire NOC Application</h2>
+            <div class="flex justify-between mb-8" id="form-steps">
+                <div class="step active" data-step="1">1. Business Details</div>
+                <div class="step" data-step="2">2. Safety Measures</div>
+                <div class="step" data-step="3">3. Documents Upload</div>
+                <div class="step" data-step="4">4. Review & Submit</div>
+            </div>
+
+            <!-- Step 1 Content -->
+            <div class="step-content active" data-step="1">
+                <h3 class="text-xl font-semibold mb-4">Business Information</h3>
+                <div class="grid grid-cols-2 gap-6">
+                    <div>
+                        <label class="block mb-2">Business Name</label>
+                        <input type="text" class="form-control" id="businessName" 
+                               value="Fire Shakti" required>
+                    </div>
+                    <div>
+                        <label class="block mb-2">Business Type</label>
+                        <select class="form-control" id="businessType" required>
+                            <option value="Manufacturing" selected>Manufacturing</option>
+                            <option value="Hospitality">Hospitality</option>
+                            <option value="Retail">Retail</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block mb-2">Business Address</label>
+                        <input type="text" class="form-control" id="businessAddress" required>
+                    </div>
+                    <div>
+                        <label class="block mb-2">Contact Number</label>
+                        <input type="tel" class="form-control" id="contactNumber" required>
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-between">
+                    <button class="btn btn-secondary" disabled>Previous</button>
+                    <button class="btn btn-primary" onclick="nextStep()">Next</button>
+                </div>
+            </div>
+
+            <!-- Step 2 Content -->
+            <div class="step-content hidden" data-step="2">
+                <h3 class="text-xl font-semibold mb-4">Safety Measures</h3>
+                <div class="grid grid-cols-2 gap-6">
+                    <div>
+                        <label class="block mb-2">Number of Fire Extinguishers</label>
+                        <input type="number" class="form-control" id="fireExtinguishers" min="0" required>
+                    </div>
+                    <div>
+                        <label class="block mb-2">Fire Alarm System Installed</label>
+                        <select class="form-control" id="fireAlarm" required>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block mb-2">Emergency Exits</label>
+                        <input type="number" class="form-control" id="emergencyExits" min="0" required>
+                    </div>
+                    <div>
+                        <label class="block mb-2">Last Fire Drill Date</label>
+                        <input type="date" class="form-control" id="lastFireDrill" required>
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-between">
+                    <button class="btn btn-secondary" onclick="previousStep()">Previous</button>
+                    <button class="btn btn-primary" onclick="nextStep()">Next</button>
+                </div>
+            </div>
+
+            <!-- Step 3 Document Upload -->
+            <div class="step-content hidden" data-step="3">
+                <h3 class="text-xl font-semibold mb-4">Upload Required Documents</h3>
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="document-card text-center">
+                        <i class="fas fa-file-pdf text-4xl text-red-500 mb-2"></i>
+                        <div class="font-medium mb-2">Building Plan</div>
+                        <input type="file" class="hidden" id="buildingPlan" accept=".pdf">
+                        <button class="btn btn-outline-primary" 
+                                onclick="document.getElementById('buildingPlan').click()">
+                            Upload PDF
+                        </button>
+                    </div>
+                    <div class="document-card text-center">
+                        <i class="fas fa-file-contract text-4xl text-blue-500 mb-2"></i>
+                        <div class="font-medium mb-2">Safety Certificate</div>
+                        <input type="file" class="hidden" id="safetyCertificate" accept=".pdf">
+                        <button class="btn btn-outline-primary"
+                                onclick="document.getElementById('safetyCertificate').click()">
+                            Upload PDF
+                        </button>
+                    </div>
+                    <div class="document-card text-center">
+                        <i class="fas fa-file-invoice text-4xl text-green-500 mb-2"></i>
+                        <div class="font-medium mb-2">Insurance Document</div>
+                        <input type="file" class="hidden" id="insuranceDoc" accept=".pdf">
+                        <button class="btn btn-outline-primary"
+                                onclick="document.getElementById('insuranceDoc').click()">
+                            Upload PDF
+                        </button>
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-between">
+                    <button class="btn btn-secondary" onclick="previousStep()">Previous</button>
+                    <button class="btn btn-primary" onclick="nextStep()">Next</button>
+                </div>
+            </div>
+
+            <!-- Step 4 Content -->
+            <div class="step-content hidden" data-step="4">
+                <h3 class="text-xl font-semibold mb-4">Review Your Application</h3>
+                <div class="bg-gray-50 p-6 rounded-lg">
+                    <div id="review-content">
+                        <!-- Dynamic content will be inserted here -->
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-between">
+                    <button class="btn btn-secondary" onclick="previousStep()">Previous</button>
+                    <button class="btn btn-success" onclick="submitApplication()">
+                        <i class="fas fa-check-circle mr-2"></i>Submit Application
+                    </button>
+                </div>
+            </div>
         </div>
+    </div>
+</section>
 
-        <!-- Applications Table -->
-        <div class="table-responsive mt-4">
-            <h2 class="text-xl font-semibold mb-4">Submitted Applications</h2>
-            <table class="table table-striped" id="applicationsTable">
-                <thead>
-                    <tr>
-                        <th>Application ID</th>
-                        <th>Documents</th>
-                        <th>Status</th>
-                        <th>Submission Time</th>
-                        <th>Generate Report</th>
-                    </tr>
-                </thead>
-                <tbody id="applicationsBody">
-                    <!-- Application rows will be updated here via WebSocket -->
-                    {% for app in applications %}
-                    <tr>
-                        <td>{{ app._id }}</td>
-                        <td>
-                            <ul>
-                                <li>Identity Proof: {{ app.documents.identity }}</li>
-                                <li>Property Documents: {{ app.documents.property }}</li>
-                                <li>Site Plan: {{ app.documents.sitePlan }}</li>
-                                <li>Fire Safety Plan: {{ app.documents.fireSafety }}</li>
-                                <li>NOC from Neighbors: {{ app.documents.neighborNOC }}</li>
-                                <li>Equipment Invoice: {{ app.documents.equipmentInvoice }}</li>
-                                <li>Compliance Certificate: {{ app.documents.compliance }}</li>
-                            </ul>
-                        </td>
-                        <td id="status-{{ app._id }}">{{ app.status }}</td>
-                        <td>{{ app.timestamp | datetime }}</td>
-                        <td>
-                            <button class="btn btn-secondary" onclick="generateReport('{{ app._id }}')">Generate Report</button>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+
+
+                <!-- Reports Section -->
+                <section id="reports" class="section-content hidden animated">
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <h2 class="text-2xl font-bold mb-6">Generated Reports</h2>
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr>
+                                        <th>Report ID</th>
+                                        <th>Application Type</th>
+                                        <th>Generated Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>#FIRE-1254</td>
+                                        <td>Fire NOC Application</td>
+                                        <td>2025-01-20</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-primary" onclick="generateReport()">
+                                                <i class="fas fa-download mr-2"></i>Download
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+            </div>
         </div>
     </div>
 
-    <!-- Bootstrap JS -->
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.0.11/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-
-    <!-- WebSocket for Real-Time Updates -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script>
-        const socket = new WebSocket('ws://localhost:5000/real-time-updates');
-        
-        socket.onmessage = function (event) {
-            const data = JSON.parse(event.data);
-            const statusElement = document.getElementById('status-' + data.applicationId);
-            if (statusElement) {
-                statusElement.innerText = data.newStatus;
-            }
+        // Form Data Object
+        let formData = {
+            business: {},
+            safety: {},
+            documents: {}
         };
-    </script>
 
-    <!-- Client-Side Validation for File Upload -->
-    <script>
-        document.getElementById('documentForm').addEventListener('submit', function (e) {
-            const validExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
-            const fields = ['identityProof', 'propertyDocuments', 'sitePlan', 'fireSafetyPlan', 'neighborNOC', 'equipmentInvoice', 'complianceCertificate'];
+        // Step Management
+        let currentStep = 1;
 
-            for (const field of fields) {
-                const fileInput = document.getElementById(field);
-                if (fileInput.files.length > 0) {
-                    const ext = fileInput.value.split('.').pop().toLowerCase();
-                    if (!validExtensions.includes(ext)) {
-                        alert('Please upload valid files (PDF, JPG, JPEG, PNG).');
-                        e.preventDefault();
-                        return;
-                    }
+        function showSection(sectionId) {
+            document.querySelectorAll('.section-content').forEach(section => {
+                section.classList.add('hidden');
+                section.classList.remove('animated');
+            });
+            const section = document.getElementById(sectionId);
+            section.classList.remove('hidden');
+            setTimeout(() => section.classList.add('animated'), 10);
+            
+            // Reset form steps when showing fire-noc section
+            if(sectionId === 'fire-noc') {
+                resetFormSteps();
+            }
+        }
+
+        function resetFormSteps() {
+            currentStep = 1;
+            document.querySelectorAll('[data-step]').forEach(step => {
+                step.classList.remove('active');
+                if(step.dataset.step === '1') step.classList.add('active');
+            });
+            document.querySelectorAll('.step-content').forEach(content => {
+                content.classList.add('hidden');
+                if(content.dataset.step === '1') content.classList.remove('hidden');
+            });
+        }
+
+        function nextStep() {
+            if (validateStep(currentStep)) {
+                updateFormData();
+                document.querySelector(`[data-step="${currentStep}"]`).classList.remove('active');
+                document.querySelector(`.step-content[data-step="${currentStep}"]`).classList.add('hidden');
+                currentStep++;
+                document.querySelector(`[data-step="${currentStep}"]`).classList.add('active');
+                document.querySelector(`.step-content[data-step="${currentStep}"]`).classList.remove('hidden');
+                
+                if(currentStep === 4) {
+                    populateReviewData();
                 }
             }
-        });
-
-        function generateReport(applicationId) {
-            // This function will send a request to the server to generate a report for the given application ID
-            fetch(`/generate-report/${applicationId}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Report generated successfully! You can download it from your dashboard.');
-                    } else {
-                        alert('Error generating report. Please try again later.');
-                    }
-                })
-                .catch(error => {
-                    alert('An error occurred while generating the report.');
-                });
         }
+
+        function previousStep() {
+            document.querySelector(`[data-step="${currentStep}"]`).classList.remove('active');
+            document.querySelector(`.step-content[data-step="${currentStep}"]`).classList.add('hidden');
+            currentStep--;
+            document.querySelector(`[data-step="${currentStep}"]`).classList.add('active');
+            document.querySelector(`.step-content[data-step="${currentStep}"]`).classList.remove('hidden');
+        }
+
+        function validateStep(step) {
+            const inputs = document.querySelectorAll(`.step-content[data-step="${step}"] [required]`);
+            let isValid = true;
+            
+            inputs.forEach(input => {
+                if (!input.value) {
+                    input.classList.add('border-red-500');
+                    isValid = false;
+                } else {
+                    input.classList.remove('border-red-500');
+                }
+            });
+            
+            return isValid;
+        }
+
+        function updateFormData() {
+            if(currentStep === 1) {
+                formData.business = {
+                    name: document.getElementById('businessName').value,
+                    type: document.getElementById('businessType').value,
+                    address: document.getElementById('businessAddress').value,
+                    contact: document.getElementById('contactNumber').value
+                };
+            }
+            
+            if(currentStep === 2) {
+                formData.safety = {
+                    extinguishers: document.getElementById('fireExtinguishers').value,
+                    alarm: document.getElementById('fireAlarm').value,
+                    exits: document.getElementById('emergencyExits').value,
+                    lastDrill: document.getElementById('lastFireDrill').value
+                };
+            }
+        }
+
+        function populateReviewData() {
+            const reviewContent = document.getElementById('review-content');
+            reviewContent.innerHTML = `
+                <h4 class="font-semibold mb-2">Business Details</h4>
+                <p>Name: ${formData.business.name}</p>
+                <p>Type: ${formData.business.type}</p>
+                <p>Address: ${formData.business.address}</p>
+                <p>Contact: ${formData.business.contact}</p>
+                
+                <h4 class="font-semibold mt-4 mb-2">Safety Measures</h4>
+                <p>Fire Extinguishers: ${formData.safety.extinguishers}</p>
+                <p>Fire Alarm System: ${formData.safety.alarm}</p>
+                <p>Emergency Exits: ${formData.safety.exits}</p>
+                <p>Last Fire Drill: ${formData.safety.lastDrill}</p>
+            `;
+        }
+
+        function submitApplication() {
+            alert('Application submitted successfully!');
+            showSection('dashboard');
+            resetFormSteps();
+        }
+
+        function generateReport() {
+            const doc = new jspdf.jsPDF();
+            doc.text("AEK NOC System - Application Summary", 20, 20);
+            doc.text("Application Details:", 20, 40);
+            // Add dynamic content from form
+            doc.save('application-summary.pdf');
+        }
+
+        // Initial Setup
+        document.addEventListener('DOMContentLoaded', () => {
+            showSection('dashboard');
+        });
     </script>
 </body>
-
 </html>
