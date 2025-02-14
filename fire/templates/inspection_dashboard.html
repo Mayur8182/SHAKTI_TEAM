@@ -1,0 +1,370 @@
+{% extends 'base.html' %}
+
+{% block title %}Inspection Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <nav class="col-md-2 d-none d-md-block bg-light sidebar">
+            <div class="position-sticky">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#overview" onclick="showSection('overview')">
+                            <i class="fas fa-home"></i> Overview
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#scheduled" onclick="showSection('scheduled')">
+                            <i class="fas fa-calendar"></i> Scheduled Inspections
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#completed" onclick="showSection('completed')">
+                            <i class="fas fa-check-circle"></i> Completed Inspections
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#reports" onclick="showSection('reports')">
+                            <i class="fas fa-file-alt"></i> Inspection Reports
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="col-md-10 ms-sm-auto px-md-4">
+            <!-- Overview Section -->
+            <div id="overview-section" class="section">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Inspection Overview</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <button class="btn btn-primary" onclick="showScheduleModal()">
+                            <i class="fas fa-plus"></i> Schedule New Inspection
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="row">
+                    <div class="col-md-3 mb-4">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body">
+                                <h5 class="card-title">Pending Inspections</h5>
+                                <h2 id="pending-count">0</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-4">
+                        <div class="card bg-success text-white">
+                            <div class="card-body">
+                                <h5 class="card-title">Completed Inspections</h5>
+                                <h2 id="completed-count">0</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-4">
+                        <div class="card bg-warning text-white">
+                            <div class="card-body">
+                                <h5 class="card-title">Today's Inspections</h5>
+                                <h2 id="today-count">0</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-4">
+                        <div class="card bg-info text-white">
+                            <div class="card-body">
+                                <h5 class="card-title">Total Inspections</h5>
+                                <h2 id="total-count">0</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Inspections Table -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Recent Inspections</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="recent-inspections-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Business</th>
+                                        <th>Inspector</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recent-inspections-body">
+                                    <!-- Will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scheduled Inspections Section -->
+            <div id="scheduled-section" class="section hidden">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Scheduled Inspections</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="input-group me-2">
+                            <input type="date" class="form-control" id="schedule-date-filter">
+                        </div>
+                        <button class="btn btn-outline-secondary" onclick="filterSchedule()">
+                            Filter
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="scheduled-inspections-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Time</th>
+                                        <th>Business</th>
+                                        <th>Location</th>
+                                        <th>Inspector</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="scheduled-inspections-body">
+                                    <!-- Will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Completed Inspections Section -->
+            <div id="completed-section" class="section hidden">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Completed Inspections</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="input-group me-2">
+                            <input type="month" class="form-control" id="completed-month-filter">
+                        </div>
+                        <button class="btn btn-outline-secondary" onclick="filterCompleted()">
+                            Filter
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="completed-inspections-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Business</th>
+                                        <th>Inspector</th>
+                                        <th>Result</th>
+                                        <th>Report</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="completed-inspections-body">
+                                    <!-- Will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reports Section -->
+            <div id="reports-section" class="section hidden">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Inspection Reports</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            Export
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="exportReports('pdf')">PDF</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="exportReports('csv')">CSV</a></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="reports-table">
+                                <thead>
+                                    <tr>
+                                        <th>Report ID</th>
+                                        <th>Date</th>
+                                        <th>Business</th>
+                                        <th>Inspector</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reports-body">
+                                    <!-- Will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Schedule Inspection Modal -->
+<div class="modal fade" id="scheduleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Schedule New Inspection</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="scheduleForm">
+                    <div class="mb-3">
+                        <label class="form-label">Business</label>
+                        <select class="form-select" id="business-select" required>
+                            <option value="">Select Business</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Inspector</label>
+                        <select class="form-select" id="inspector-select" required>
+                            <option value="">Select Inspector</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Date</label>
+                        <input type="date" class="form-control" id="inspection-date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Time</label>
+                        <input type="time" class="form-control" id="inspection-time" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-control" id="inspection-notes" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="scheduleInspection()">Schedule</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Inspection Modal -->
+<div class="modal fade" id="viewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Inspection Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="inspection-details">
+                <!-- Will be populated by JavaScript -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Add your JavaScript code here for handling the inspection dashboard functionality
+const inspectionDashboard = {
+    init() {
+        this.loadOverview();
+        this.bindEvents();
+    },
+
+    bindEvents() {
+        // Add event listeners
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const section = e.target.getAttribute('href').substring(1);
+                this.showSection(section);
+            });
+        });
+    },
+
+    async loadOverview() {
+        try {
+            const response = await fetch('/api/inspections/overview');
+            const data = await response.json();
+            
+            if (data.success) {
+                // Update stats
+                document.getElementById('pending-count').textContent = data.stats.pending;
+                document.getElementById('completed-count').textContent = data.stats.completed;
+                document.getElementById('today-count').textContent = data.stats.today;
+                document.getElementById('total-count').textContent = data.stats.total;
+                
+                // Update recent inspections table
+                this.updateRecentInspectionsTable(data.recent);
+            }
+        } catch (error) {
+            console.error('Error loading overview:', error);
+            showNotification('Error loading overview data', 'danger');
+        }
+    },
+
+    showSection(sectionId) {
+        // Hide all sections
+        document.querySelectorAll('.section').forEach(section => {
+            section.classList.add('hidden');
+        });
+        
+        // Show selected section
+        document.getElementById(`${sectionId}-section`).classList.remove('hidden');
+        
+        // Update active nav link
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === `#${sectionId}`) {
+                link.classList.add('active');
+            }
+        });
+        
+        // Load section data
+        switch(sectionId) {
+            case 'scheduled':
+                this.loadScheduledInspections();
+                break;
+            case 'completed':
+                this.loadCompletedInspections();
+                break;
+            case 'reports':
+                this.loadInspectionReports();
+                break;
+        }
+    },
+
+    // Add other methods for handling inspections
+    // ...
+};
+
+// Initialize dashboard when document loads
+document.addEventListener('DOMContentLoaded', () => {
+    inspectionDashboard.init();
+});
+</script>
+{% endblock %}

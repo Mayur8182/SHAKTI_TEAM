@@ -32,8 +32,10 @@
         .sidebar {
             background: var(--primary-color);
             color: white;
-            padding: 2rem;
+            padding: 1.5rem;
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
         .nav-link {
@@ -116,18 +118,73 @@
         .hidden {
             display: none;
         }
-    </style>    
+
+        .user-profile {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        #profileImageUpload:hover + label {
+            background-color: #f3f4f6;
+        }
+
+        .truncate {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    </style>
 </head>
 
 <body>
     <div class="dashboard-container">
         <div class="d-flex">
-            <!-- Sidebar -->
             <div class="sidebar w-64">
-                <div class="text-center mb-8">
+                <div class="text-center mb-4">
                     <img src="/logo.png" alt="AEK Logo" class="w-24 h-24 mx-auto mb-4">
-                    <h2 class="text-xl font-bold">AEK NOC System</h2>
+                    <h2 class="text-xl font-bold text-white">AEK NOC System</h2>
                 </div>
+
+                <div class="user-profile border-t border-b border-blue-700 py-4 mb-4">
+                    <div class="text-center">
+                        <div class="relative inline-block">
+                            <img id="userProfileImage" 
+                                 src="/static/default-profile.png" 
+                                 alt="Profile" 
+                                 class="w-20 h-20 rounded-full object-cover border-2 border-white mx-auto">
+                            <label for="profileImageUpload" class="absolute bottom-0 right-0 bg-white rounded-full p-1 cursor-pointer shadow-md">
+                                <i class="fas fa-camera text-gray-600"></i>
+                            </label>
+                            <input type="file" id="profileImageUpload" class="hidden" accept="image/*" onchange="uploadProfileImage(event)">
+                        </div>
+                        <h3 id="userName" class="text-white font-medium mt-2"></h3>
+                        <span id="userRole" class="inline-block bg-blue-200 text-blue-800 text-xs px-2 py-1 rounded-full mt-1"></span>
+                    </div>
+                    
+                    <div class="text-white text-sm mt-3 px-4">
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-envelope w-5"></i>
+                            <span id="userEmail" class="ml-2 truncate"></span>
+                        </div>
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-phone w-5"></i>
+                            <span id="userPhone" class="ml-2"></span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-clock w-5"></i>
+                            <span id="lastLogin" class="ml-2 text-xs"></span>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-center mt-3 space-x-2">
+                        <button onclick="editProfile()" class="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded">
+                            <i class="fas fa-edit mr-1"></i>Edit
+                        </button>
+                        <button onclick="logout()" class="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded">
+                            <i class="fas fa-sign-out-alt mr-1"></i>Logout
+                        </button>
+                    </div>
+                </div>
+
                 <nav class="space-y-2">
                     <button class="nav-link w-full text-left" onclick="showSection('dashboard')">
                         <i class="fas fa-home mr-2"></i> Dashboard
@@ -147,35 +204,57 @@
                 </nav>
             </div>
 
-            <!-- Main Content -->
             <div class="main-content flex-1">
-                <!-- Dashboard Section -->
                 <section id="dashboard" class="section-content animated">
-                    <h1 class="text-3xl font-bold mb-6">Welcome, [User Name]</h1>
-                    
-                    <!-- Application Progress -->
+                    <div class="bg-white p-6 rounded-lg shadow-sm mb-8">
+                        <div class="flex items-center space-x-4">
+                            <div class="profile-image">
+                                <img id="userProfileImage" 
+                                     src="/static/default-profile.png" 
+                                     alt="Profile" 
+                                     class="w-20 h-20 rounded-full object-cover border-4 border-primary">
+                            </div>
+                            <div class="profile-info flex-1">
+                                <h1 class="text-3xl font-bold mb-2" id="userName">Welcome</h1>
+                                <div class="flex items-center space-x-4 text-gray-600">
+                                    <span id="userRole" class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm"></span>
+                                    <span id="userEmail" class="flex items-center">
+                                        <i class="fas fa-envelope mr-2"></i>
+                                    </span>
+                                    <span id="userPhone" class="flex items-center">
+                                        <i class="fas fa-phone mr-2"></i>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="profile-actions">
+                                <button onclick="editProfile()" class="btn btn-outline-primary">
+                                    <i class="fas fa-edit mr-2"></i>Edit Profile
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="bg-white p-6 rounded-lg shadow-sm mb-8">
                         <h3 class="text-xl font-semibold mb-4">Application Progress</h3>
                         <div class="progress-bar mb-4">
-                            <div class="progress-fill" style="width: 65%"></div>
+                            <div class="progress-fill" id="progress-bar-fill" style="width: 0%"></div> 
                         </div>
                         <div class="grid grid-cols-3 gap-4">
                             <div class="text-center">
-                                <div class="text-2xl font-bold text-primary">2</div>
+                                <div class="text-2xl font-bold text-primary" id="pending-applications">0</div>
                                 <div class="text-gray-600">Pending Applications</div>
                             </div>
                             <div class="text-center">
-                                <div class="text-2xl font-bold text-green-600">5</div>
+                                <div class="text-2xl font-bold text-green-600" id="approved-applications">0</div>
                                 <div class="text-gray-600">Approved Applications</div>
                             </div>
                             <div class="text-center">
-                                <div class="text-2xl font-bold text-blue-600">3</div>
+                                <div class="text-2xl font-bold text-blue-600" id="upcoming-inspections">0</div>
                                 <div class="text-gray-600">Upcoming Inspections</div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Quick Actions -->
                     <div class="grid grid-cols-2 gap-6 mb-8">
                         <div class="bg-blue-50 p-6 rounded-lg cursor-pointer hover:bg-blue-100 transition">
                             <h4 class="font-semibold mb-2">New Fire NOC Application</h4>
@@ -193,186 +272,229 @@
                         </div>
                     </div>
 
-                    <!-- Recent Activities -->
                     <div class="bg-white p-6 rounded-lg shadow-sm">
                         <h3 class="text-xl font-semibold mb-4">Recent Activities</h3>
-                        <div class="space-y-4">
-                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
-                                <div>
-                                    <div class="font-medium">Fire NOC Application Submitted</div>
-                                    <div class="text-sm text-gray-500">2025-01-20 14:32</div>
-                                </div>
-                                <span class="status-indicator status-pending">Pending Review</span>
+                        <div class="space-y-4" id="recent-activities">
                             </div>
-                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
-                                <div>
-                                    <div class="font-medium">Inspection Scheduled</div>
-                                    <div class="text-sm text-gray-500">2025-01-25 10:00</div>
+                    </div>
+                </section>
+
+                <section id="fire-noc" class="section-content hidden animated">
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <div class="mb-8">
+                            <h2 class="text-2xl font-bold mb-2">Fire NOC Application</h2>
+                            <div class="flex justify-between mb-8" id="form-steps">
+                                <div class="step active" data-step="1">1. Business Details</div>
+                                <div class="step" data-step="2">2. Safety Measures</div>
+                                <div class="step" data-step="3">3. Documents Upload</div>
+                                <div class="step" data-step="4">4. Review & Submit</div>
+                            </div>
+
+                            <div class="step-content active" data-step="1">
+                                <h3 class="text-xl font-semibold mb-4">Business Information</h3>
+                                <div class="grid grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="block mb-2">Business Name</label>
+                                        <input type="text" class="form-control" id="businessName" required>
+                                    </div>
+                                    <div>
+                                        <label class="block mb-2">Business Type</label>
+                                        <select class="form-control" id="businessType" required>
+                                            <option value="Manufacturing">Manufacturing</option>
+                                            <option value="Hospitality">Hospitality</option>
+                                            <option value="Retail">Retail</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block mb-2">Business Address</label>
+                                        <input type="text" class="form-control" id="businessAddress" required>
+                                    </div>
+                                    <div>
+                                        <label class="block mb-2">Contact Number</label>
+                                        <input type="tel" class="form-control" id="contactNumber" required>
+                                    </div>
                                 </div>
-                                <span class="status-indicator status-approved">Confirmed</span>
+                                <div class="mt-6 flex justify-between">
+                                    <button class="btn btn-secondary" disabled>Previous</button>
+                                    <button class="btn btn-primary" onclick="nextStep()">Next</button>
+                                </div>
+                            </div>
+
+                            <div class="step-content hidden" data-step="2">
+                                <h3 class="text-xl font-semibold mb-4">Safety Measures</h3>
+                                <div class="grid grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="block mb-2">Number of Fire Extinguishers</label>
+                                        <input type="number" class="form-control" id="fireExtinguishers" min="0" required>
+                                    </div>
+                                    <div>
+                                        <label class="block mb-2">Fire Alarm System Installed</label>
+                                        <select class="form-control" id="fireAlarm" required>
+                                            <option value="Yes">Yes</option>
+                                            <option value="No">No</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block mb-2">Emergency Exits</label>
+                                        <input type="number" class="form-control" id="emergencyExits" min="0" required>
+                                    </div>
+                                    <div>
+                                        <label class="block mb-2">Last Fire Drill Date</label>
+                                        <input type="date" class="form-control" id="lastFireDrill" required>
+                                    </div>
+                                </div>
+                                <div class="mt-6 flex justify-between">
+                                    <button class="btn btn-secondary" onclick="previousStep()">Previous</button>
+                                    <button class="btn btn-primary" onclick="nextStep()">Next</button>
+                                </div>
+                            </div>
+
+                            <div class="step-content hidden" data-step="3">
+                                <h3 class="text-xl font-semibold mb-4">Upload Required Documents</h3>
+                                <div class="grid grid-cols-3 gap-4">
+                                    <div class="document-card text-center">
+                                        <i class="fas fa-file-pdf text-4xl text-red-500 mb-2"></i>
+                                        <div class="font-medium mb-2">Building Plan</div>
+                                        <input type="file" class="hidden" id="buildingPlan" accept=".pdf">
+                                        <button class="btn btn-outline-primary" onclick="document.getElementById('buildingPlan').click()">
+                                            Upload PDF
+                                        </button>
+                                    </div>
+                                    <div class="document-card text-center">
+                                        <i class="fas fa-file-contract text-4xl text-blue-500 mb-2"></i>
+                                        <div class="font-medium mb-2">Safety Certificate</div>
+                                        <input type="file" class="hidden" id="safetyCertificate" accept=".pdf">
+                                        <button class="btn btn-outline-primary" onclick="document.getElementById('safetyCertificate').click()">
+                                            Upload PDF
+                                        </button>
+                                    </div>
+                                    <div class="document-card text-center">
+                                        <i class="fas fa-file-invoice text-4xl text-green-500 mb-2"></i>
+                                        <div class="font-medium mb-2">Insurance Document</div>
+                                        <input type="file" class="hidden" id="insuranceDoc" accept=".pdf">
+                                        <button class="btn btn-outline-primary" onclick="document.getElementById('insuranceDoc').click()">
+                                            Upload PDF
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="mt-6 flex justify-between">
+                                    <button class="btn btn-secondary" onclick="previousStep()">Previous</button>
+                                    <button class="btn btn-primary" onclick="nextStep()">Next</button>
+                                </div>
+                            </div>
+
+                            <div class="step-content hidden" data-step="4">
+                                <h3 class="text-xl font-semibold mb-4">Review Your Application</h3>
+                                <div class="bg-gray-50 p-6 rounded-lg">
+                                    <div id="review-content">
+                                        </div>
+                                </div>
+                                <div class="mt-6 flex justify-between">
+                                    <button class="btn btn-secondary" onclick="previousStep()">Previous</button>
+                                    <button class="btn btn-success" onclick="submitApplication()">
+                                        <i class="fas fa-check-circle mr-2"></i>Submit Application
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </section>
-<!-- Fire NOC Application Section -->
-<section id="fire-noc" class="section-content hidden animated">
-    <!-- Multi-step Form -->
-    <div class="bg-white p-6 rounded-lg shadow-sm">
-        <div class="mb-8">
-            <h2 class="text-2xl font-bold mb-2">Fire NOC Application</h2>
-            <div class="flex justify-between mb-8" id="form-steps">
-                <div class="step active" data-step="1">1. Business Details</div>
-                <div class="step" data-step="2">2. Safety Measures</div>
-                <div class="step" data-step="3">3. Documents Upload</div>
-                <div class="step" data-step="4">4. Review & Submit</div>
-            </div>
 
-            <!-- Step 1 Content -->
-            <div class="step-content active" data-step="1">
-                <h3 class="text-xl font-semibold mb-4">Business Information</h3>
-                <div class="grid grid-cols-2 gap-6">
-                    <div>
-                        <label class="block mb-2">Business Name</label>
-                        <input type="text" class="form-control" id="businessName" 
-                               value="Fire Shakti" required>
-                    </div>
-                    <div>
-                        <label class="block mb-2">Business Type</label>
-                        <select class="form-control" id="businessType" required>
-                            <option value="Manufacturing" selected>Manufacturing</option>
-                            <option value="Hospitality">Hospitality</option>
-                            <option value="Retail">Retail</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block mb-2">Business Address</label>
-                        <input type="text" class="form-control" id="businessAddress" required>
-                    </div>
-                    <div>
-                        <label class="block mb-2">Contact Number</label>
-                        <input type="tel" class="form-control" id="contactNumber" required>
-                    </div>
-                </div>
-                <div class="mt-6 flex justify-between">
-                    <button class="btn btn-secondary" disabled>Previous</button>
-                    <button class="btn btn-primary" onclick="nextStep()">Next</button>
-                </div>
-            </div>
-
-            <!-- Step 2 Content -->
-            <div class="step-content hidden" data-step="2">
-                <h3 class="text-xl font-semibold mb-4">Safety Measures</h3>
-                <div class="grid grid-cols-2 gap-6">
-                    <div>
-                        <label class="block mb-2">Number of Fire Extinguishers</label>
-                        <input type="number" class="form-control" id="fireExtinguishers" min="0" required>
-                    </div>
-                    <div>
-                        <label class="block mb-2">Fire Alarm System Installed</label>
-                        <select class="form-control" id="fireAlarm" required>
-                            <option value="Yes">Yes</option>
-                            <option value="No">No</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block mb-2">Emergency Exits</label>
-                        <input type="number" class="form-control" id="emergencyExits" min="0" required>
-                    </div>
-                    <div>
-                        <label class="block mb-2">Last Fire Drill Date</label>
-                        <input type="date" class="form-control" id="lastFireDrill" required>
-                    </div>
-                </div>
-                <div class="mt-6 flex justify-between">
-                    <button class="btn btn-secondary" onclick="previousStep()">Previous</button>
-                    <button class="btn btn-primary" onclick="nextStep()">Next</button>
-                </div>
-            </div>
-
-            <!-- Step 3 Document Upload -->
-            <div class="step-content hidden" data-step="3">
-                <h3 class="text-xl font-semibold mb-4">Upload Required Documents</h3>
-                <div class="grid grid-cols-3 gap-4">
-                    <div class="document-card text-center">
-                        <i class="fas fa-file-pdf text-4xl text-red-500 mb-2"></i>
-                        <div class="font-medium mb-2">Building Plan</div>
-                        <input type="file" class="hidden" id="buildingPlan" accept=".pdf">
-                        <button class="btn btn-outline-primary" 
-                                onclick="document.getElementById('buildingPlan').click()">
-                            Upload PDF
-                        </button>
-                    </div>
-                    <div class="document-card text-center">
-                        <i class="fas fa-file-contract text-4xl text-blue-500 mb-2"></i>
-                        <div class="font-medium mb-2">Safety Certificate</div>
-                        <input type="file" class="hidden" id="safetyCertificate" accept=".pdf">
-                        <button class="btn btn-outline-primary"
-                                onclick="document.getElementById('safetyCertificate').click()">
-                            Upload PDF
-                        </button>
-                    </div>
-                    <div class="document-card text-center">
-                        <i class="fas fa-file-invoice text-4xl text-green-500 mb-2"></i>
-                        <div class="font-medium mb-2">Insurance Document</div>
-                        <input type="file" class="hidden" id="insuranceDoc" accept=".pdf">
-                        <button class="btn btn-outline-primary"
-                                onclick="document.getElementById('insuranceDoc').click()">
-                            Upload PDF
-                        </button>
-                    </div>
-                </div>
-                <div class="mt-6 flex justify-between">
-                    <button class="btn btn-secondary" onclick="previousStep()">Previous</button>
-                    <button class="btn btn-primary" onclick="nextStep()">Next</button>
-                </div>
-            </div>
-
-            <!-- Step 4 Content -->
-            <div class="step-content hidden" data-step="4">
-                <h3 class="text-xl font-semibold mb-4">Review Your Application</h3>
-                <div class="bg-gray-50 p-6 rounded-lg">
-                    <div id="review-content">
-                        <!-- Dynamic content will be inserted here -->
-                    </div>
-                </div>
-                <div class="mt-6 flex justify-between">
-                    <button class="btn btn-secondary" onclick="previousStep()">Previous</button>
-                    <button class="btn btn-success" onclick="submitApplication()">
-                        <i class="fas fa-check-circle mr-2"></i>Submit Application
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-
-
-                <!-- Reports Section -->
-                <section id="reports" class="section-content hidden animated">
+                <section id="inspections" class="section-content hidden animated">
                     <div class="bg-white p-6 rounded-lg shadow-sm">
-                        <h2 class="text-2xl font-bold mb-6">Generated Reports</h2>
+                        <h2 class="text-2xl font-bold mb-6">Upcoming Inspections</h2>
                         <div class="overflow-x-auto">
                             <table class="w-full">
                                 <thead>
                                     <tr>
-                                        <th>Report ID</th>
-                                        <th>Application Type</th>
-                                        <th>Generated Date</th>
-                                        <th>Actions</th>
+                                        <th>Inspection Date</th>
+                                        <th>Location</th>
+                                        <th>Inspector</th>
+                                        <th>Status</th>
                                     </tr>
                                 </thead>
                                 <tbody>
+                                    </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div id="upcoming-inspections" class="section">
+                        <h2 class="text-xl font-semibold mb-4">Upcoming Inspections</h2>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
                                     <tr>
-                                        <td>#FIRE-1254</td>
-                                        <td>Fire NOC Application</td>
-                                        <td>2025-01-20</td>
-                                        <td>
-                                            <button class="btn btn-sm btn-primary" onclick="generateReport()">
-                                                <i class="fas fa-download mr-2"></i>Download
-                                            </button>
-                                        </td>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Inspection Date
+                                        </th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Time
+                                        </th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Location
+                                        </th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Inspector
+                                        </th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Status
+                                        </th>
                                     </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200" id="inspections-list">
+                                    <!-- Will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="licenses" class="section-content hidden animated">
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <h2 class="text-2xl font-bold mb-6">Licenses</h2>
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr>
+                                        <th>License Type</th>
+                                        <th>License Number</th>
+                                        <th>Expiry Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="reports" class="section-content animated hidden">
+                    <div class="bg-white p-6 rounded-lg shadow-lg">
+                        <h2 class="text-2xl font-bold mb-6">Your NOC Reports</h2>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full bg-white">
+                                <thead>
+                                    <tr class="bg-gray-100">
+                                        <th class="px-6 py-3 border-b-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                            Certificate No.
+                                        </th>
+                                        <th class="px-6 py-3 border-b-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                            Business Name
+                                        </th>
+                                        <th class="px-6 py-3 border-b-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                            Issue Date
+                                        </th>
+                                        <th class="px-6 py-3 border-b-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                            Valid Until
+                                        </th>
+                                        <th class="px-6 py-3 border-b-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                            Actions
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reports-table-body">
+                                    <!-- Reports will be populated here -->
                                 </tbody>
                             </table>
                         </div>
@@ -381,6 +503,103 @@
             </div>
         </div>
     </div>
+
+    <div class="dashboard-container">
+        <div class="d-flex">
+            <!-- Existing sidebar -->
+            
+            <div class="main-content flex-1 p-6">
+                <section id="dashboard" class="section-content animated">
+                    <!-- Existing welcome section -->
+                    
+                    <!-- New Approval Reports Section -->
+                    <div class="bg-white p-6 rounded-lg shadow-sm mb-8">
+                        <h3 class="text-xl font-semibold mb-4">Recent Approvals</h3>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Report ID</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Business Name</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Approved Date</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valid Until</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="approvalReportsTable" class="bg-white divide-y divide-gray-200">
+                                    <!-- Reports will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+    
+                    <!-- Application Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="bg-white p-6 rounded-lg shadow-sm">
+                            <div class="flex items-center justify-between mb-4">
+                                <h4 class="text-lg font-semibold">Approved Applications</h4>
+                                <span class="text-green-500">
+                                    <i class="fas fa-check-circle text-xl"></i>
+                                </span>
+                            </div>
+                            <div id="approvedApplicationsList" class="space-y-4">
+                                <!-- Approved applications will be populated here -->
+                            </div>
+                        </div>
+    
+                        <div class="bg-white p-6 rounded-lg shadow-sm">
+                            <div class="flex items-center justify-between mb-4">
+                                <h4 class="text-lg font-semibold">Pending Renewals</h4>
+                                <span class="text-yellow-500">
+                                    <i class="fas fa-clock text-xl"></i>
+                                </span>
+                            </div>
+                            <div id="pendingRenewalsList" class="space-y-4">
+                                <!-- Pending renewals will be populated here -->
+                            </div>
+                        </div>
+    
+                        <div class="bg-white p-6 rounded-lg shadow-sm">
+                            <div class="flex items-center justify-between mb-4">
+                                <h4 class="text-lg font-semibold">Recent Activities</h4>
+                                <span class="text-blue-500">
+                                    <i class="fas fa-history text-xl"></i>
+                                </span>
+                            </div>
+                            <div id="recentActivitiesList" class="space-y-4">
+                                <!-- Recent activities will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </section>
+    
+                <!-- Approval Report Modal -->
+                <div id="approvalReportModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center">
+                    <div class="bg-white rounded-lg p-8 max-w-3xl w-full max-h-90vh overflow-y-auto">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-2xl font-bold">NOC Approval Report</h3>
+                            <button onclick="closeReportModal()" class="text-gray-500 hover:text-gray-700">
+                                <i class="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
+                        <div id="reportContent">
+                            <!-- Report content will be populated here -->
+                        </div>
+                        <div class="mt-6 flex justify-end space-x-4">
+                            <button onclick="downloadReport()" class="btn btn-primary">
+                                <i class="fas fa-download mr-2"></i>Download PDF
+                            </button>
+                            <button onclick="closeReportModal()" class="btn btn-secondary">
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script>
@@ -402,10 +621,14 @@
             const section = document.getElementById(sectionId);
             section.classList.remove('hidden');
             setTimeout(() => section.classList.add('animated'), 10);
-            
+
             // Reset form steps when showing fire-noc section
-            if(sectionId === 'fire-noc') {
+            if (sectionId === 'fire-noc') {
                 resetFormSteps();
+            }
+
+            if (sectionId === 'reports') {
+                loadReports();
             }
         }
 
@@ -413,11 +636,11 @@
             currentStep = 1;
             document.querySelectorAll('[data-step]').forEach(step => {
                 step.classList.remove('active');
-                if(step.dataset.step === '1') step.classList.add('active');
+                if (step.dataset.step === '1') step.classList.add('active');
             });
             document.querySelectorAll('.step-content').forEach(content => {
                 content.classList.add('hidden');
-                if(content.dataset.step === '1') content.classList.remove('hidden');
+                if (content.dataset.step === '1') content.classList.remove('hidden');
             });
         }
 
@@ -429,8 +652,8 @@
                 currentStep++;
                 document.querySelector(`[data-step="${currentStep}"]`).classList.add('active');
                 document.querySelector(`.step-content[data-step="${currentStep}"]`).classList.remove('hidden');
-                
-                if(currentStep === 4) {
+
+                if (currentStep === 4) {
                     populateReviewData();
                 }
             }
@@ -447,7 +670,7 @@
         function validateStep(step) {
             const inputs = document.querySelectorAll(`.step-content[data-step="${step}"] [required]`);
             let isValid = true;
-            
+
             inputs.forEach(input => {
                 if (!input.value) {
                     input.classList.add('border-red-500');
@@ -456,12 +679,12 @@
                     input.classList.remove('border-red-500');
                 }
             });
-            
+
             return isValid;
         }
 
         function updateFormData() {
-            if(currentStep === 1) {
+            if (currentStep === 1) {
                 formData.business = {
                     name: document.getElementById('businessName').value,
                     type: document.getElementById('businessType').value,
@@ -469,8 +692,8 @@
                     contact: document.getElementById('contactNumber').value
                 };
             }
-            
-            if(currentStep === 2) {
+
+            if (currentStep === 2) {
                 formData.safety = {
                     extinguishers: document.getElementById('fireExtinguishers').value,
                     alarm: document.getElementById('fireAlarm').value,
@@ -488,7 +711,7 @@
                 <p>Type: ${formData.business.type}</p>
                 <p>Address: ${formData.business.address}</p>
                 <p>Contact: ${formData.business.contact}</p>
-                
+
                 <h4 class="font-semibold mt-4 mb-2">Safety Measures</h4>
                 <p>Fire Extinguishers: ${formData.safety.extinguishers}</p>
                 <p>Fire Alarm System: ${formData.safety.alarm}</p>
@@ -497,10 +720,48 @@
             `;
         }
 
-        function submitApplication() {
-            alert('Application submitted successfully!');
-            showSection('dashboard');
-            resetFormSteps();
+        async function submitApplication() {
+            const form = new FormData();
+
+            // Add form data
+            form.append('businessName', document.getElementById('businessName').value);
+            form.append('businessType', document.getElementById('businessType').value);
+            form.append('businessAddress', document.getElementById('businessAddress').value);
+            form.append('contactNumber', document.getElementById('contactNumber').value);
+            form.append('fireExtinguishers', document.getElementById('fireExtinguishers').value);
+            form.append('fireAlarm', document.getElementById('fireAlarm').value);
+            form.append('emergencyExits', document.getElementById('emergencyExits').value);
+            form.append('lastFireDrill', document.getElementById('lastFireDrill').value);
+
+            // Add files
+            const buildingPlan = document.getElementById('buildingPlan').files[0];
+            const safetyCert = document.getElementById('safetyCertificate').files[0];
+            const insuranceDoc = document.getElementById('insuranceDoc').files[0];
+
+            form.append('buildingPlan', buildingPlan);
+            form.append('safetyCertificate', safetyCert);
+            form.append('insuranceDoc', insuranceDoc);
+
+            try {
+                const response = await fetch('/submit_noc', {
+                    method: 'POST',
+                    body: form,
+                    headers: {
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    }
+                });
+
+                if (response.ok) {
+                    alert('Application submitted successfully!');
+                    showSection('dashboard');
+                    resetFormSteps();
+                } else {
+                    alert('Error submitting application');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error submitting application');
+            }
         }
 
         function generateReport() {
@@ -511,9 +772,684 @@
             doc.save('application-summary.pdf');
         }
 
+        // Fetch application data on page load
+        fetch('/api/user-data')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Update user profile information
+                document.getElementById('userName').textContent = `Welcome, ${data.user.name}`;
+                document.getElementById('userRole').textContent = formatRole(data.user.role);
+                document.getElementById('userEmail').textContent = data.user.email;
+                document.getElementById('userPhone').textContent = data.user.mobile || 'Not provided';
+                
+                // Update profile image if available
+                if (data.user.profile_image) {
+                    document.getElementById('userProfileImage').src = `/static/profile_images/${data.user.profile_image}`;
+                }
+
+                // Add role-specific elements for admin
+                if (data.user.role === 'admin') {
+                    addAdminElements(data.user);
+                }
+                
+                // Update statistics
+                document.getElementById('pending-applications').textContent = data.stats.pending_applications;
+                document.getElementById('approved-applications').textContent = data.stats.approved_applications;
+                document.getElementById('upcoming-inspections').textContent = data.stats.upcoming_inspections;
+                
+                // Update progress bar
+                const total = data.stats.pending_applications + data.stats.approved_applications;
+                const progress = total > 0 ? (data.stats.approved_applications / total) * 100 : 0;
+                document.getElementById('progress-bar-fill').style.width = `${progress}%`;
+            })
+            .catch(error => {
+                console.error('Error fetching user data:', error);
+                showNotification('Error loading user data', 'error');
+            });
+
+        function formatRole(role) {
+            return role.split('_')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
+        }
+
+        function addAdminElements(userData) {
+            // Add admin-specific information
+            const profileInfo = document.querySelector('.profile-info');
+            const adminStats = document.createElement('div');
+            adminStats.className = 'mt-2 flex space-x-4 text-sm text-gray-600';
+            adminStats.innerHTML = `
+                <span class="flex items-center">
+                    <i class="fas fa-users mr-2"></i>
+                    Total Users: ${userData.total_users || 0}
+                </span>
+                <span class="flex items-center">
+                    <i class="fas fa-file-alt mr-2"></i>
+                    Total Applications: ${userData.total_applications || 0}
+                </span>
+                <span class="flex items-center">
+                    <i class="fas fa-clock mr-2"></i>
+                    Last Login: ${new Date(userData.last_login).toLocaleString()}
+                </span>
+            `;
+            profileInfo.appendChild(adminStats);
+        }
+
+        function editProfile() {
+            // Create modal for editing profile
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg p-6 w-96 max-w-full mx-4">
+                    <h3 class="text-xl font-bold mb-4">Edit Profile</h3>
+                    <form id="editProfileForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Name</label>
+                            <input type="text" id="editName" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Email</label>
+                            <input type="email" id="editEmail" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Phone</label>
+                            <input type="tel" id="editPhone" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        </div>
+                        <div class="flex justify-end space-x-3 mt-6">
+                            <button type="button" onclick="closeEditProfile()" 
+                                    class="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300">
+                                Cancel
+                            </button>
+                            <button type="submit" 
+                                    class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                                Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            // Pre-fill form with current values
+            document.getElementById('editName').value = document.getElementById('userName').textContent.replace('Welcome, ', '');
+            document.getElementById('editEmail').value = document.getElementById('userEmail').textContent;
+            document.getElementById('editPhone').value = document.getElementById('userPhone').textContent;
+
+            // Handle form submission
+            document.getElementById('editProfileForm').onsubmit = async (e) => {
+                e.preventDefault();
+                await updateProfile();
+            };
+        }
+
+        function closeEditProfile() {
+            document.querySelector('.fixed').remove();
+        }
+
+        async function updateProfile() {
+            const formData = {
+                name: document.getElementById('editName').value,
+                email: document.getElementById('editEmail').value,
+                phone: document.getElementById('editPhone').value
+            };
+
+            try {
+                const response = await fetch('/api/update-profile', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to update profile');
+                }
+
+                const data = await response.json();
+                
+                // Update UI with new values
+                document.getElementById('userName').textContent = `Welcome, ${data.name}`;
+                document.getElementById('userEmail').textContent = data.email;
+                document.getElementById('userPhone').textContent = data.phone;
+
+                closeEditProfile();
+                showNotification('Profile updated successfully', 'success');
+            } catch (error) {
+                console.error('Error updating profile:', error);
+                showNotification('Failed to update profile', 'error');
+            }
+        }
+
+        function logout() {
+            window.location.href = '/logout';
+        }
+
+        // Dashboard functionality
+        document.addEventListener('DOMContentLoaded', () => {
+            showSection('dashboard'); 
+        });
+
+        async function submitNOCApplication(event) {
+            event.preventDefault();
+            
+            const form = document.getElementById('nocApplicationForm');
+            const formData = new FormData(form);
+
+            try {
+                const response = await fetch('/submit_noc', {
+                    method: 'POST',
+                    body: formData,
+                    // Don't set Content-Type header when sending FormData
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to submit application');
+                }
+
+                const result = await response.json();
+                
+                // Show success message
+                showNotification('Application submitted successfully!', 'success');
+                
+                // Reset form
+                form.reset();
+                
+                // Refresh the applications list
+                loadApplications();
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification(error.message, 'error');
+            }
+        }
+
+        // Make sure your form has the correct event listener
+        document.getElementById('nocApplicationForm').addEventListener('submit', submitNOCApplication);
+
+        async function uploadProfileImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('profile_image', file);
+
+            try {
+                const response = await fetch('/api/update-profile-image', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to upload image');
+                }
+
+                const data = await response.json();
+                document.getElementById('userProfileImage').src = `/static/profile_images/${data.image_path}`;
+                showNotification('Profile image updated successfully', 'success');
+            } catch (error) {
+                console.error('Error uploading profile image:', error);
+                showNotification('Failed to upload profile image', 'error');
+            }
+        }
+
+        function downloadReport(reportId) {
+            // Show loading state
+            const downloadBtn = event.target;
+            const originalText = downloadBtn.innerHTML;
+            downloadBtn.disabled = true;
+            downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Downloading...';
+            
+            // Create a hidden iframe for download
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
+            
+            // Set a timeout to detect if download fails
+            const timeoutId = setTimeout(() => {
+                document.body.removeChild(iframe);
+                downloadBtn.disabled = false;
+                downloadBtn.innerHTML = originalText;
+                showNotification('Download failed. Please try again.', 'error');
+            }, 30000); // 30 second timeout
+            
+            // Handle iframe load event
+            iframe.onload = function() {
+                clearTimeout(timeoutId);
+                
+                try {
+                    // Check if the iframe contains an error response
+                    const iframeContent = iframe.contentDocument || iframe.contentWindow.document;
+                    if (iframeContent.body.textContent.includes('error')) {
+                        showNotification('Failed to generate report. Please try again.', 'error');
+                    }
+                } catch (e) {
+                    // If we can't access iframe content, assume download started
+                    showNotification('Download started!', 'success');
+                }
+                
+                // Cleanup
+                document.body.removeChild(iframe);
+                downloadBtn.disabled = false;
+                downloadBtn.innerHTML = originalText;
+            };
+            
+            // Start the download
+            iframe.src = `/download-report/${reportId}`;
+        }
+
+        function fetchDashboardData() {
+            // Fetch user's applications and approval reports
+            Promise.all([
+                fetch('/api/user-applications').then(res => res.json()),
+                fetch('/api/approval-reports').then(res => res.json())
+            ])
+            .then(([applications, reports]) => {
+                updateDashboardStats(applications);
+                populateApprovalReports(reports);
+                populateApplicationLists(applications);
+            })
+            .catch(error => {
+                console.error('Error fetching dashboard data:', error);
+                showNotification('Error loading dashboard data', 'error');
+            });
+        }
+
+        function updateDashboardStats(applications) {
+            document.getElementById('totalApplications').textContent = applications.length;
+            document.getElementById('approvedApplications').textContent = 
+                applications.filter(app => app.status === 'approved').length;
+            document.getElementById('pendingApplications').textContent = 
+                applications.filter(app => app.status === 'pending').length;
+        }
+
+        function populateApprovalReports(reports) {
+            const tableBody = document.getElementById('approvalReportsTable');
+            tableBody.innerHTML = '';
+
+            reports.forEach(report => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap">${report.report_id}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">${report.business_name}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        ${new Date(report.approval_details.approval_date).toLocaleDateString()}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        ${new Date(report.approval_details.valid_until).toLocaleDateString()}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <button onclick="viewReport('${report.report_id}')" 
+                                class="text-blue-600 hover:text-blue-800 mr-3">
+                            <i class="fas fa-eye"></i> View
+                        </button>
+                        <button onclick="downloadReport('${report.report_id}')"
+                                class="text-green-600 hover:text-green-800">
+                            <i class="fas fa-download"></i> Download
+                        </button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function populateApplicationLists(applications) {
+            // Populate approved applications
+            const approvedList = document.getElementById('approvedApplicationsList');
+            approvedList.innerHTML = '';
+            
+            applications.filter(app => app.status === 'approved')
+                .slice(0, 5)
+                .forEach(app => {
+                    const div = document.createElement('div');
+                    div.className = 'p-4 bg-gray-50 rounded-lg';
+                    div.innerHTML = `
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h5 class="font-medium">${app.business_name}</h5>
+                                <p class="text-sm text-gray-500">Approved on: ${new Date(app.approval_date).toLocaleDateString()}</p>
+                            </div>
+                            <button onclick="viewReport('${app.report_id}')" 
+                                    class="text-blue-600 hover:text-blue-800">
+                                <i class="fas fa-file-alt"></i>
+                            </button>
+                        </div>
+                    `;
+                    approvedList.appendChild(div);
+                });
+
+            // Populate pending renewals
+            const renewalsList = document.getElementById('pendingRenewalsList');
+            renewalsList.innerHTML = '';
+            
+            applications.filter(app => {
+                const validUntil = new Date(app.valid_until);
+                const now = new Date();
+                const daysUntilExpiry = (validUntil - now) / (1000 * 60 * 60 * 24);
+                return daysUntilExpiry <= 30 && daysUntilExpiry > 0;
+            })
+            .forEach(app => {
+                const div = document.createElement('div');
+                div.className = 'p-4 bg-gray-50 rounded-lg';
+                div.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h5 class="font-medium">${app.business_name}</h5>
+                            <p class="text-sm text-red-500">Expires: ${new Date(app.valid_until).toLocaleDateString()}</p>
+                        </div>
+                        <button onclick="initiateRenewal('${app._id}')" 
+                                class="text-yellow-600 hover:text-yellow-800">
+                            <i class="fas fa-sync"></i> Renew
+                        </button>
+                    </div>
+                `;
+                renewalsList.appendChild(div);
+            });
+        }
+
+        async function viewReport(reportId) {
+            try {
+                const response = await fetch(`/approval-report/${reportId}`);
+                const report = await response.json();
+                
+                if (!response.ok) throw new Error(report.error);
+                
+                displayReportModal(report);
+            } catch (error) {
+                console.error('Error fetching report:', error);
+                showNotification('Error loading report', 'error');
+            }
+        }
+
+        function displayReportModal(report) {
+            const modal = document.getElementById('approvalReportModal');
+            const content = document.getElementById('reportContent');
+            
+            content.innerHTML = `
+                <div class="space-y-6">
+                    <div class="border-b pb-4">
+                        <h4 class="text-xl font-semibold mb-2">Business Information</h4>
+                        <p class="grid grid-cols-2 gap-4">
+                            <span class="text-gray-600">Business Name:</span>
+                            <span>${report.business_name}</span>
+                            <span class="text-gray-600">Business Type:</span>
+                            <span>${report.business_type}</span>
+                            <span class="text-gray-600">Address:</span>
+                            <span>${report.business_address}</span>
+                        </p>
+                    </div>
+                    
+                    <div class="border-b pb-4">
+                        <h4 class="text-xl font-semibold mb-2">Approval Details</h4>
+                        <p class="grid grid-cols-2 gap-4">
+                            <span class="text-gray-600">Approved By:</span>
+                            <span>${report.approval_details.approved_by}</span>
+                            <span class="text-gray-600">Approval Date:</span>
+                            <span>${new Date(report.approval_details.approval_date).toLocaleDateString()}</span>
+                            <span class="text-gray-600">Valid Until:</span>
+                            <span>${new Date(report.approval_details.valid_until).toLocaleDateString()}</span>
+                        </p>
+                    </div>
+                    
+                    <div class="border-b pb-4">
+                        <h4 class="text-xl font-semibold mb-2">Safety Compliance</h4>
+                        <p class="grid grid-cols-2 gap-4">
+                            <span class="text-gray-600">Fire Extinguishers:</span>
+                            <span>${report.safety_compliance.fire_extinguishers}</span>
+                            <span class="text-gray-600">Fire Alarm:</span>
+                            <span>${report.safety_compliance.fire_alarm}</span>
+                            <span class="text-gray-600">Emergency Exits:</span>
+                            <span>${report.safety_compliance.emergency_exits}</span>
+                            <span class="text-gray-600">Last Fire Drill:</span>
+                            <span>${report.safety_compliance.last_fire_drill}</span>
+                        </p>
+                    </div>
+                    
+                    <div>
+                        <h4 class="text-xl font-semibold mb-2">Approval Conditions</h4>
+                        <ul class="list-disc pl-5 space-y-2">
+                            ${report.approval_conditions.map(condition => 
+                                `<li>${condition}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+            `;
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeReportModal() {
+            const modal = document.getElementById('approvalReportModal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+        }
+
+        function downloadReport(reportId) {
+            // Show loading state
+            const downloadBtn = event.target;
+            const originalText = downloadBtn.innerHTML;
+            downloadBtn.disabled = true;
+            downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Downloading...';
+            
+            // Create a hidden iframe for download
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
+            
+            // Set a timeout to detect if download fails
+            const timeoutId = setTimeout(() => {
+                document.body.removeChild(iframe);
+                downloadBtn.disabled = false;
+                downloadBtn.innerHTML = originalText;
+                showNotification('Download failed. Please try again.', 'error');
+            }, 30000); // 30 second timeout
+            
+            // Handle iframe load event
+            iframe.onload = function() {
+                clearTimeout(timeoutId);
+                
+                try {
+                    // Check if the iframe contains an error response
+                    const iframeContent = iframe.contentDocument || iframe.contentWindow.document;
+                    if (iframeContent.body.textContent.includes('error')) {
+                        showNotification('Failed to generate report. Please try again.', 'error');
+                    }
+                } catch (e) {
+                    // If we can't access iframe content, assume download started
+                    showNotification('Download started!', 'success');
+                }
+                
+                // Cleanup
+                document.body.removeChild(iframe);
+                downloadBtn.disabled = false;
+                downloadBtn.innerHTML = originalText;
+            };
+            
+            // Start the download
+            iframe.src = `/download-report/${reportId}`;
+        }
+
+        function initiateRenewal(applicationId) {
+            // Redirect to renewal form
+            window.location.href = `/renew-application/${applicationId}`;
+        }
+
+        // Socket connection for real-time updates
+        function initializeSocketConnection() {
+            const socket = io();
+            
+            socket.on('application_approved', (data) => {
+                showNotification('Application Approved', 'success');
+                fetchDashboardData();
+            });
+            
+            socket.on('application_updated', (data) => {
+                fetchDashboardData();
+            });
+
+            socket.on('application_status_updated', (data) => {
+                if (data.status === 'approved' && data.report) {
+                    // Add the new report to the approvalReportsTable
+                    addNewReport(data.report);
+                }
+                
+                // Update dashboard stats
+                fetchDashboardData();
+                
+                // Show notification
+                showNotification(
+                    `Application ${data.status.toUpperCase()}`, 
+                    data.status === 'approved' ? 'success' : 'warning'
+                );
+            });
+        }
+
+        function addNewReport(report) {
+            const tableBody = document.getElementById('approvalReportsTable');
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="px-6 py-4 whitespace-nowrap">${report.report_id}</td>
+                <td class="px-6 py-4 whitespace-nowrap">${report.business_name}</td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    ${new Date(report.approval_details.approval_date).toLocaleDateString()}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    ${new Date(report.approval_details.valid_until).toLocaleDateString()}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <button onclick="viewReport('${report.report_id}')" 
+                            class="text-blue-600 hover:text-blue-800 mr-3">
+                        <i class="fas fa-eye"></i> View
+                    </button>
+                    <button onclick="downloadReport('${report.report_id}')"
+                            class="text-green-600 hover:text-green-800">
+                        <i class="fas fa-download"></i> Download
+                    </button>
+                </td>
+            `;
+            tableBody.insertBefore(row, tableBody.firstChild);
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            
+            // Style based on type
+            const backgroundColor = type === 'success' ? '#4caf50' : 
+                                  type === 'error' ? '#f44336' : 
+                                  '#2196f3';
+            
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 16px;
+                border-radius: 4px;
+                background-color: ${backgroundColor};
+                color: white;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+                z-index: 1000;
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Remove notification after 5 seconds
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+
+        async function loadReports() {
+            try {
+                const response = await fetch('/api/approval-reports');
+                const data = await response.json();
+                
+                const tableBody = document.getElementById('reports-table-body');
+                tableBody.innerHTML = data.reports.map(report => `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap border-b">
+                            ${report.report_id}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap border-b">
+                            ${report.business_name}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap border-b">
+                            ${new Date(report.approval_details.approval_date).toLocaleDateString()}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap border-b">
+                            ${new Date(report.approval_details.valid_until).toLocaleDateString()}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap border-b">
+                            <button onclick="viewReport('${report.report_id}')"
+                                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                            <button onclick="downloadReport('${report.report_id}')"
+                                    class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                                <i class="fas fa-download"></i> Download
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading reports:', error);
+                showNotification('Error loading reports', 'error');
+            }
+        }
+
         // Initial Setup
         document.addEventListener('DOMContentLoaded', () => {
-            showSection('dashboard');
+            showSection('dashboard'); 
+        });
+
+        async function loadUpcomingInspections() {
+            try {
+                const response = await fetch('/api/user/inspections');
+                const data = await response.json();
+
+                if (data.success) {
+                    const tbody = document.getElementById('inspections-list');
+                    tbody.innerHTML = data.inspections.map(insp => `
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap">${insp.date}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">${insp.time}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">${insp.location}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">${insp.inspector_name}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                    ${getStatusClass(insp.status)}">
+                                    ${insp.status}
+                                </span>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error loading inspections:', error);
+            }
+        }
+
+        function getStatusClass(status) {
+            const classes = {
+                'scheduled': 'bg-blue-100 text-blue-800',
+                'in_progress': 'bg-yellow-100 text-yellow-800',
+                'completed': 'bg-green-100 text-green-800',
+                'cancelled': 'bg-red-100 text-red-800'
+            };
+            return classes[status] || 'bg-gray-100 text-gray-800';
+        }
+
+        // Call when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUpcomingInspections();
         });
     </script>
 </body>

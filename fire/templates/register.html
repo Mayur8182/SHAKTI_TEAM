@@ -4,157 +4,453 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register - AEK NOC System</title>
-    <!-- Tailwind CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        /* Background Image */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
         body {
             background: url('https://th.bing.com/th/id/OIP.yIK5VIUK-Wt5QMukWjJ7WQHaDt?w=329&h=175&c=7&r=0&o=5&dpr=1.3&pid=1.7') no-repeat center center fixed;
             background-size: cover;
+            min-height: 100vh;
+            color: #333;
         }
-        /* Overlay for readability */
+
         .overlay {
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(3px);
             z-index: 1;
         }
+
         .container {
             position: relative;
             z-index: 2;
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
         }
-        /* Custom Form Card */
-        .form-card {
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-            max-width: 400px; /* Reduce size for better alignment */
+
+        .register-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            width: 100%;
+            max-width: 550px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+            animation: cardAppear 0.6s ease-out;
         }
-        /* Logo Styling */
+
+        @keyframes cardAppear {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .progress-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: #f0f0f0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0;
+            background: linear-gradient(90deg, #990000, #ff4d4d);
+            transition: width 0.3s ease;
+        }
+
+        .logo-container {
+            text-align: center;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
         .logo {
-            width: 70px;
-            height: auto;
-            display: block;
-            margin: 0 auto 1rem;
+            width: 100px;
+            height: 100px;
             border-radius: 50%;
+            padding: 5px;
+            background: linear-gradient(45deg, #990000, #ff4d4d);
+            margin-bottom: 20px;
+            transition: all 0.5s ease;
+            animation: logoPulse 2s infinite;
         }
-        /* Text Colors */
-        h2, label {
+
+        @keyframes logoPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .title {
+            font-size: 28px;
+            color: #990000;
+            margin-bottom: 30px;
+            text-align: center;
+            font-weight: 600;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            position: relative;
+            animation: formAppear 0.8s ease-out;
+        }
+
+        @keyframes formAppear {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 20px;
+            font-size: 16px;
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            color: #495057;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: #990000;
+            box-shadow: 0 0 0 3px rgba(153, 0, 0, 0.1);
+            outline: none;
+        }
+
+        .form-label {
+            position: absolute;
+            left: 15px;
+            top: -10px;
+            background: white;
+            padding: 0 5px;
+            color: #990000;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
             color: #990000;
         }
-        /* Custom Button Styling */
-        button {
-            background-color: #990000;
-            color: #fff;
+
+        .password-requirements {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+            padding-left: 15px;
         }
-        button:hover {
-            background-color: #b30000;
+
+        .requirement {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 2px;
+        }
+
+        .requirement i {
+            font-size: 10px;
+        }
+
+        .valid {
+            color: #28a745;
+        }
+
+        .invalid {
+            color: #dc3545;
+        }
+
+        .btn-register {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(45deg, #990000, #ff4d4d);
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-register:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(153, 0, 0, 0.3);
+        }
+
+        .btn-register::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                45deg,
+                transparent,
+                rgba(255, 255, 255, 0.3),
+                transparent
+            );
+            transform: rotate(45deg);
+            transition: 0.5s;
+        }
+
+        .btn-register:hover::after {
+            left: 100%;
+        }
+
+        .login-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .login-link a {
+            color: #990000;
+            text-decoration: none;
+            font-weight: 500;
+            transition: 0.3s ease;
+        }
+
+        .login-link a:hover {
+            color: #ff4d4d;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            animation: alertSlide 0.5s ease-out;
+        }
+
+        @keyframes alertSlide {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .alert-success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .alert-danger {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 12px 20px;
+            font-size: 16px;
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            color: #495057;
+            transition: all 0.3s ease;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23990000' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+        }
+
+        @media (max-width: 576px) {
+            .register-card {
+                padding: 20px;
+            }
+
+            .logo {
+                width: 80px;
+                height: 80px;
+            }
+
+            .title {
+                font-size: 24px;
+            }
         }
     </style>
 </head>
-<body class="flex items-center justify-center h-screen">
+<body>
     <div class="overlay"></div>
-    <div class="container flex items-center justify-center h-screen">
-        <div class="form-card w-full">
-            <!-- Company Logo -->
-            <img src="https://tse3.mm.bing.net/th?id=OIP.8LC-0Es7mqVzfE_ElrEdDQAAAA&pid=Api&P=0&h=180" alt="Company Logo" class="logo">
-            <h2 class="text-2xl font-bold mb-4 text-center">Register</h2>
-
-            <!-- Flash Messages Section -->
-            <div id="notification-area" class="mb-4">
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                        {% for category, message in messages %}
-                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
-                        {% endfor %}
-                    {% endif %}
-                {% endwith %}
+    <div class="container">
+        <div class="register-card">
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+            
+            <div class="logo-container">
+                <img src="https://tse3.mm.bing.net/th?id=OIP.8LC-0Es7mqVzfE_ElrEdDQAAAA&pid=Api&P=0&h=180" alt="Company Logo" class="logo">
+                <h1 class="title">Create Account</h1>
             </div>
 
-            <!-- Registration Form -->
+            <div id="notification-area"></div>
+
             <form action="{{ url_for('register') }}" method="POST" class="needs-validation" novalidate>
-                {{ form.hidden_tag() }} <!-- CSRF Token -->
+                {{ form.hidden_tag() }}
 
-                <!-- Username Input -->
-                <div class="form-group mb-3">
-                    <label for="username" class="block font-bold mb-1">Username</label>
-                    {{ form.username(class="form-control", placeholder="Username") }}
-                    <div class="invalid-feedback">Please enter a valid username.</div>
-                </div>
-
-                <!-- Full Name Input -->
-                <div class="form-group mb-3">
-                    <label for="name" class="block font-bold mb-1">Full Name</label>
-                    {{ form.name(class="form-control", placeholder="John Doe") }}
-                    <div class="invalid-feedback">Please enter your full name.</div>
-                </div>
-
-                <!-- Email Input -->
-                <div class="form-group mb-3">
-                    <label for="email" class="block font-bold mb-1">Email Address</label>
-                    {{ form.email(class="form-control", placeholder="admin@example.com") }}
-                    <div class="invalid-feedback">Please provide a valid email address.</div>
-                </div>
-
-                <!-- Password Input -->
-                <div class="form-group mb-3">
-                    <label for="password" class="block font-bold mb-1">Password</label>
-                    {{ form.password(class="form-control", placeholder="••••••••") }}
-                    <div class="invalid-feedback">Please enter a password.</div>
-                </div>
-
-                <!-- Confirm Password Input -->
-                <div class="form-group mb-3">
-                    <label for="confirm-password" class="block font-bold mb-1">Confirm Password</label>
-                    {{ form.confirm_password(class="form-control", placeholder="••••••••") }}
-                    <div class="invalid-feedback">Passwords do not match.</div>
-                </div>
-
-                <!-- Role Selection -->
-                <div class="form-group mb-3">
-                    <label for="role" class="block font-bold mb-1">Register As</label>
-                    {{ form.role(class="form-select") }}
-                    <div class="invalid-feedback">Please select a role.</div>
-                </div>
-
-                <!-- Submit Button -->
                 <div class="form-group">
-                    <button type="submit" class="w-full py-2 rounded-md hover:bg-red-700 transition duration-200 ease-in-out font-bold">
-                        Register
-                    </button>
+                    <input type="text" class="form-control" id="username" name="username" required>
+                    <label class="form-label">Username</label>
+                </div>
+
+                <div class="form-group">
+                    <input type="text" class="form-control" id="name" name="name" required>
+                    <label class="form-label">Full Name</label>
+                </div>
+
+                <div class="form-group">
+                    <input type="email" class="form-control" id="email" name="email" required>
+                    <label class="form-label">Email Address</label>
+                </div>
+
+                <div class="form-group">
+                    <input type="password" class="form-control" id="password" name="password" required>
+                    <label class="form-label">Password</label>
+                    <i class="fas fa-eye password-toggle"></i>
+                    <div class="password-requirements">
+                        <div class="requirement" id="length"><i class="fas fa-circle"></i> At least 8 characters</div>
+                        <div class="requirement" id="uppercase"><i class="fas fa-circle"></i> One uppercase letter</div>
+                        <div class="requirement" id="lowercase"><i class="fas fa-circle"></i> One lowercase letter</div>
+                        <div class="requirement" id="number"><i class="fas fa-circle"></i> One number</div>
+                        <div class="requirement" id="special"><i class="fas fa-circle"></i> One special character</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                    <label class="form-label">Confirm Password</label>
+                    <i class="fas fa-eye password-toggle"></i>
+                </div>
+
+                <div class="form-group">
+                    <select class="form-select" id="role" name="role" required>
+                        <option value="">Select Role</option>
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                    <label class="form-label">Register As</label>
+                </div>
+
+                <button type="submit" class="btn-register">
+                    Create Account
+                </button>
+
+                <div class="login-link">
+                    Already have an account? <a href="{{ url_for('login') }}">Sign In</a>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Bootstrap JS (Optional) -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- JavaScript for form validation -->
     <script>
-        (function () {
-            'use strict';
-            var forms = document.querySelectorAll('.needs-validation');
-            Array.prototype.slice.call(forms)
-                .forEach(function (form) {
-                    form.addEventListener('submit', function (event) {
-                        if (!form.checkValidity()) {
-                            event.preventDefault();
-                            event.stopPropagation();
-                        }
-                        form.classList.add('was-validated');
-                    }, false);
-                });
-        })();
+        // Password visibility toggle
+        document.querySelectorAll('.password-toggle').forEach(toggle => {
+            toggle.addEventListener('click', function() {
+                const input = this.previousElementSibling.previousElementSibling;
+                const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+                input.setAttribute('type', type);
+                this.classList.toggle('fa-eye');
+                this.classList.toggle('fa-eye-slash');
+            });
+        });
+
+        // Password validation
+        const password = document.getElementById('password');
+        const requirements = {
+            length: /.{8,}/,
+            uppercase: /[A-Z]/,
+            lowercase: /[a-z]/,
+            number: /[0-9]/,
+            special: /[^A-Za-z0-9]/
+        };
+
+        password.addEventListener('input', function() {
+            const value = this.value;
+            let progress = 0;
+
+            for (const [requirement, regex] of Object.entries(requirements)) {
+                const valid = regex.test(value);
+                const requirementEl = document.getElementById(requirement);
+                requirementEl.classList.toggle('valid', valid);
+                requirementEl.classList.toggle('invalid', !valid);
+                requirementEl.querySelector('i').className = `fas fa-${valid ? 'check' : 'circle'}`;
+                if (valid) progress += 20;
+            }
+
+            document.querySelector('.progress-fill').style.width = `${progress}%`;
+        });
+
+        // Form validation
+        const form = document.querySelector('form');
+        const confirmPassword = document.getElementById('confirm_password');
+
+        form.addEventListener('submit', function(e) {
+            if (!form.checkValidity()) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            if (password.value !== confirmPassword.value) {
+                e.preventDefault();
+                showNotification('Passwords do not match!', 'danger');
+            }
+
+            form.classList.add('was-validated');
+        });
+
+        // Notification function
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type}`;
+            notification.innerHTML = message;
+            document.getElementById('notification-area').appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
     </script>
 </body>
 </html>

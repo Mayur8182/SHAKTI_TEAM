@@ -4,117 +4,400 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - AEK NOC System</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Custom CSS -->
-    <link href="{{ url_for('static', filename='styles.css') }}" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        /* Background Image and Overlay */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
         body {
             background: url('https://fireprotectionservices.co.uk/wp-content/uploads/2019/11/fire-safety-scaled-2560x1280-1.jpg') no-repeat center center fixed;
             background-size: cover;
-            color: #f8f9fa;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
         }
+
         .overlay {
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(3px);
             z-index: 1;
         }
+
         .container {
             position: relative;
             z-index: 2;
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
         }
-        /* Card Styling */
-        .card {
-            border-radius: 10px;
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 40px;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            position: relative;
             overflow: hidden;
-            background-color: rgba(255, 255, 255, 0.85); /* Light overlay for readability */
+            animation: cardAppear 0.6s ease-out;
         }
-        .card-header {
-            background: #990000; /* Dark red for header to match fire safety theme */
-            color: #ffffff;
+
+        @keyframes cardAppear {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .glow {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: radial-gradient(circle, rgba(255,77,77,0.8) 0%, rgba(255,77,77,0) 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .logo-container {
             text-align: center;
+            margin-bottom: 30px;
+            position: relative;
         }
-        .card-body {
-            padding: 2rem;
-        }
-        /* Logo Styling */
+
         .logo {
-            width: 80px; /* Set width */
-            height: 80px; /* Set height to the same value as width for a square shape */
-            border-radius: 50%; /* Make it circular */
-            object-fit: cover; /* Maintain aspect ratio and cover */
-            display: block;
-            margin: 0 auto 1rem;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            padding: 5px;
+            background: linear-gradient(45deg, #990000, #ff4d4d);
+            margin-bottom: 20px;
+            transition: all 0.5s ease;
+            animation: logoSpin 20s linear infinite;
         }
-        /* Form Styling */
-        .form-group label {
-            font-weight: bold;
-            color: #333;
+
+        @keyframes logoSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
+
+        .logo:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 30px rgba(255, 77, 77, 0.6);
+        }
+
+        .title {
+            font-size: 32px;
+            color: #fff;
+            margin-bottom: 30px;
+            text-align: center;
+            font-weight: 600;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            animation: titleAppear 0.8s ease-out;
+        }
+
+        @keyframes titleAppear {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+            position: relative;
+            animation: formAppear 0.8s ease-out;
+        }
+
+        @keyframes formAppear {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
         .form-control {
-            border-radius: 8px;
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            color: #fff;
+            transition: all 0.3s ease;
         }
-        .btn-primary {
-            background-color: #990000;
-            border-color: #990000;
+
+        .form-control:focus {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: #ff4d4d;
+            outline: none;
+            box-shadow: 0 0 15px rgba(255, 77, 77, 0.3);
         }
-        .btn-primary:hover {
-            background-color: #b30000;
-            border-color: #b30000;
+
+        .form-label {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255, 255, 255, 0.8);
+            pointer-events: none;
+            transition: all 0.3s ease;
+            padding: 0 5px;
         }
-        /* Link Styling */
-        .text-center a {
-            color: #990000;
+
+        .form-control:focus + .form-label,
+        .form-control:not(:placeholder-shown) + .form-label {
+            top: -5px;
+            left: 15px;
+            font-size: 14px;
+            background: linear-gradient(45deg, #990000, #ff4d4d);
+            padding: 0 10px;
+            border-radius: 20px;
+            color: #fff;
+            transform: translateY(-50%) scale(0.9);
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: rgba(255, 255, 255, 0.8);
+            transition: 0.3s ease;
+        }
+
+        .password-toggle:hover {
+            color: #ff4d4d;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(45deg, #990000, #ff4d4d);
+            border: none;
+            border-radius: 15px;
+            color: #fff;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-login::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.4),
+                transparent
+            );
+            transition: 0.5s;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(153, 0, 0, 0.4);
+        }
+
+        .btn-login:hover::before {
+            left: 100%;
+        }
+
+        .register-link {
+            text-align: center;
+            margin-top: 25px;
+            animation: linkAppear 1s ease-out;
+        }
+
+        @keyframes linkAppear {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .register-link a {
+            color: #fff;
+            text-decoration: none;
+            font-weight: 500;
+            transition: 0.3s ease;
+            padding: 8px 15px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .register-link a:hover {
+            background: rgba(255, 77, 77, 0.3);
+            box-shadow: 0 0 15px rgba(255, 77, 77, 0.3);
+        }
+
+        .social-login {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .social-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            transition: all 0.3s ease;
+        }
+
+        .social-btn:hover {
+            transform: translateY(-3px);
+            background: rgba(255, 77, 77, 0.3);
+            box-shadow: 0 0 15px rgba(255, 77, 77, 0.3);
+        }
+
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 30px 20px;
+            }
+
+            .title {
+                font-size: 24px;
+            }
+
+            .logo {
+                width: 100px;
+                height: 100px;
+            }
+
+            .form-control {
+                padding: 12px 15px;
+            }
+
+            .btn-login {
+                padding: 12px;
+                font-size: 16px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="overlay"></div>
     <div class="container">
-        <div class="row justify-content-center align-items-center vh-100">
-            <div class="col-md-6">
-                <div class="card shadow">
-                    <div class="card-header">
-                        <img src="https://tse3.mm.bing.net/th?id=OIP.8LC-0Es7mqVzfE_ElrEdDQAAAA&pid=Api&P=0&h=180" alt="Company Logo" class="logo">
-                        <h3 class="mb-0">Login</h3>
-                    </div>
-                    <div class="card-body">
-                        <form method="POST" action="{{ url_for('login') }}">
-                            {{ form.hidden_tag() }}
-                            <div class="form-group">
-                                {{ form.username.label(class="form-label") }}
-                                {{ form.username(class="form-control") }}
-                                {% if form.username.errors %}
-                                    <div class="text-danger">{{ form.username.errors[0] }}</div>
-                                {% endif %}
-                            </div>
-                            <div class="form-group">
-                                {{ form.password.label(class="form-label") }}
-                                {{ form.password(class="form-control") }}
-                                {% if form.password.errors %}
-                                    <div class="text-danger">{{ form.password.errors[0] }}</div>
-                                {% endif %}
-                            </div>
-                            <div class="form-group">
-                                {{ form.submit(class="btn btn-primary btn-block") }}
-                            </div>
-                        </form>
-                        <div class="text-center">
-                            <a href="{{ url_for('register') }}">Create an account</a>
-                        </div>
-                    </div>
+        <div class="login-card">
+            <div class="glow"></div>
+            <div class="logo-container">
+                <img src="https://tse3.mm.bing.net/th?id=OIP.8LC-0Es7mqVzfE_ElrEdDQAAAA&pid=Api&P=0&h=180" alt="Company Logo" class="logo">
+                <h1 class="title">Welcome Back</h1>
+            </div>
+            
+            <form method="POST" action="{{ url_for('login') }}">
+                {{ form.hidden_tag() }}
+                <div class="form-group">
+                    <input type="text" class="form-control" id="username" name="username" placeholder=" ">
+                    <label for="username" class="form-label">Username</label>
                 </div>
+                
+                <div class="form-group">
+                    <input type="password" class="form-control" id="password" name="password" placeholder=" ">
+                    <label for="password" class="form-label">Password</label>
+                    <i class="fas fa-eye password-toggle"></i>
+                </div>
+                
+                <button type="submit" class="btn-login">Sign In</button>
+            </form>
+            
+            <div class="social-login">
+                <a href="#" class="social-btn"><i class="fab fa-google"></i></a>
+                <a href="#" class="social-btn"><i class="fab fa-facebook-f"></i></a>
+                <a href="#" class="social-btn"><i class="fab fa-twitter"></i></a>
+            </div>
+            
+            <div class="register-link">
+                <a href="{{ url_for('register') }}">Don't have an account? Create one</a>
             </div>
         </div>
     </div>
-    <!-- Bootstrap JS -->
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+        // Password visibility toggle
+        document.querySelector('.password-toggle').addEventListener('click', function() {
+            const passwordInput = document.querySelector('#password');
+            const icon = this;
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+
+        // Glow effect following mouse
+        const card = document.querySelector('.login-card');
+        const glow = document.querySelector('.glow');
+
+        card.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            glow.style.left = x - 25 + 'px';
+            glow.style.top = y - 25 + 'px';
+            glow.style.opacity = '1';
+        });
+
+        card.addEventListener('mouseleave', () => {
+            glow.style.opacity = '0';
+        });
+
+        // Add loading animation to button on click
+        document.querySelector('.btn-login').addEventListener('click', function(e) {
+            this.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Signing In...';
+        });
+    </script>
 </body>
 </html>

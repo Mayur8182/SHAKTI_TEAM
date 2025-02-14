@@ -1,0 +1,240 @@
+{% extends 'base.html' %}
+
+{% block title %}View Application{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <a href="{{ url_for('manage_applications') }}" class="back-button">
+        <i class="fas fa-arrow-left"></i> Back to Applications
+    </a>
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold">Application Details</h2>
+            <div class="flex space-x-2">
+                {% if application.status == 'pending' and session.role == 'admin' %}
+                <button onclick="approveApplication('{{ application._id }}')"
+                        class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                    <i class="fas fa-check mr-2"></i>Approve
+                </button>
+                <button onclick="rejectApplication('{{ application._id }}')"
+                        class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                    <i class="fas fa-times mr-2"></i>Reject
+                </button>
+                {% endif %}
+                {% if application.status == 'approved' and report %}
+                <button onclick="downloadReport('{{ report._id }}')"
+                        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                    <i class="fas fa-download mr-2"></i>Download Report
+                </button>
+                {% endif %}
+                <button onclick="window.history.back()"
+                        class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+                    <i class="fas fa-arrow-left mr-2"></i>Back
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Basic Information -->
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <h3 class="text-lg font-semibold mb-4">Basic Information</h3>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-gray-600">Business Name:</label>
+                        <p class="font-medium">{{ application.business_name }}</p>
+                    </div>
+                    <div>
+                        <label class="text-gray-600">Business Type:</label>
+                        <p class="font-medium">{{ application.business_type }}</p>
+                    </div>
+                    <div>
+                        <label class="text-gray-600">Status:</label>
+                        <span class="px-2 py-1 text-sm font-semibold rounded-full 
+                            {% if application.status == 'approved' %}bg-green-100 text-green-800
+                            {% elif application.status == 'rejected' %}bg-red-100 text-red-800
+                            {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                            {{ application.status | upper }}
+                        </span>
+                    </div>
+                    <div>
+                        <label class="text-gray-600">Submitted By:</label>
+                        <p class="font-medium">{{ application.submitted_by }}</p>
+                    </div>
+                    <div>
+                        <label class="text-gray-600">Submitted On:</label>
+                        <p class="font-medium">{{ application.created_at.strftime('%Y-%m-%d %H:%M:%S') if application.created_at else 'Not Available' }}</p>
+                    </div>
+                    {% if application.status == 'approved' %}
+                    <div>
+                        <label class="text-gray-600">Approved By:</label>
+                        <p class="font-medium">{{ application.approved_by if application.approved_by else 'Admin' }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Contact Information -->
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <h3 class="text-lg font-semibold mb-4">Contact Information</h3>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-gray-600">Contact Person:</label>
+                        <p class="font-medium">{{ application.contact_person }}</p>
+                    </div>
+                    <div>
+                        <label class="text-gray-600">Email:</label>
+                        <p class="font-medium">{{ application.email }}</p>
+                    </div>
+                    <div>
+                        <label class="text-gray-600">Phone:</label>
+                        <p class="font-medium">{{ application.phone }}</p>
+                    </div>
+                    <div>
+                        <label class="text-gray-600">Address:</label>
+                        <p class="font-medium">{{ application.address }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Documents -->
+            <div class="bg-gray-50 p-4 rounded-lg md:col-span-2">
+                <h3 class="text-lg font-semibold mb-4">Uploaded Documents</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {% for doc in application.documents %}
+                    <div class="border p-3 rounded-lg bg-white">
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-700">{{ doc.type }}</span>
+                            <a href="{{ url_for('download_file', filename=doc.filename) }}" 
+                               class="text-blue-600 hover:text-blue-800">
+                                <i class="fas fa-download"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Rejection Modal -->
+<div id="rejectionModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <h3 class="text-lg font-medium">Reject Application</h3>
+            <div class="mt-2">
+                <textarea id="rejectionReason" class="w-full px-3 py-2 text-gray-700 border rounded-lg" 
+                          rows="4" placeholder="Enter rejection reason..."></textarea>
+            </div>
+            <div class="mt-4">
+                <button onclick="confirmReject()" 
+                        class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded w-full mb-2">
+                    Confirm Rejection
+                </button>
+                <button onclick="closeRejectionModal()" 
+                        class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded w-full">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function approveApplication(id) {
+    if (confirm('Are you sure you want to approve this application?')) {
+        fetch(`/approve_application/${id}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Application approved successfully', 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showNotification(data.error || 'Error approving application', 'error');
+            }
+        })
+        .catch(error => {
+            showNotification('Error approving application', 'error');
+        });
+    }
+}
+
+function rejectApplication(id) {
+    document.getElementById('rejectionModal').classList.remove('hidden');
+}
+
+function closeRejectionModal() {
+    document.getElementById('rejectionModal').classList.add('hidden');
+    document.getElementById('rejectionReason').value = '';
+}
+
+function confirmReject() {
+    const id = '{{ application._id }}';
+    const reason = document.getElementById('rejectionReason').value;
+    if (!reason) {
+        showNotification('Please provide a reason for rejection', 'error');
+        return;
+    }
+
+    fetch(`/reject_application/${id}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ reason: reason })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Application rejected successfully', 'success');
+            closeRejectionModal();
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showNotification(data.error || 'Error rejecting application', 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Error rejecting application', 'error');
+    });
+}
+
+function downloadReport(reportId) {
+    window.location.href = `/download_report/${reportId}`;
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg ${
+        type === 'error' ? 'bg-red-500' : 'bg-green-500'
+    } text-white`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+
+let currentPage = 1;
+const itemsPerPage = 10;
+
+// Function to fetch report details
+async function fetchReportDetails(reportId) {
+    try {
+        const response = await fetch(`/approval-report/${reportId}`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch report');
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching report:', error);
+        showNotification('Error loading report details', 'error');
+        return null;
+    }
+}
+</script>
+{% endblock %}

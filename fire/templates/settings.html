@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - Fire NOC Portal{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-6">
+    <h1 class="text-2xl font-bold text-gray-800 mb-6">Settings</h1>
+    
+    <div class="space-y-6">
+        <!-- Profile Settings Section -->
+        <div class="border-b pb-6">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">Profile Settings</h2>
+            <form method="POST" action="{{ url_for('update_profile_settings') }}" class="space-y-4">
+                <div>
+                    <label class="block text-gray-700 mb-2" for="email_notifications">Email Notifications</label>
+                    <label class="inline-flex items-center">
+                        <input type="checkbox" name="email_notifications" class="form-checkbox text-red-600">
+                        <span class="ml-2">Receive email notifications</span>
+                    </label>
+                </div>
+                
+                <div>
+                    <label class="block text-gray-700 mb-2" for="language">Language</label>
+                    <select name="language" class="form-select mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        <option value="en">English</option>
+                        <option value="hi">Hindi</option>
+                        <option value="gu">Gujarati</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700">
+                    Save Changes
+                </button>
+            </form>
+        </div>
+
+        <!-- Security Settings Section -->
+        <div class="border-b pb-6">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">Security Settings</h2>
+            <form method="POST" action="{{ url_for('update_security_settings') }}" class="space-y-4">
+                <div>
+                    <label class="block text-gray-700 mb-2" for="current_password">Current Password</label>
+                    <input type="password" name="current_password" class="form-input mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+                
+                <div>
+                    <label class="block text-gray-700 mb-2" for="new_password">New Password</label>
+                    <input type="password" name="new_password" class="form-input mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+                
+                <div>
+                    <label class="block text-gray-700 mb-2" for="confirm_password">Confirm New Password</label>
+                    <input type="password" name="confirm_password" class="form-input mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+                
+                <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700">
+                    Update Password
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

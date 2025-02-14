@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Users{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <a href="{{ url_for('admin_dashboard') }}" class="back-button">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold">Manage Users</h2>
+            <button onclick="exportUsers()" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                <i class="fas fa-download mr-2"></i>Export Users
+            </button>
+        </div>
+
+        <!-- Filter Controls -->
+        <div class="mb-6 flex gap-4">
+            <select id="roleFilter" class="rounded border p-2">
+                <option value="all">All Roles</option>
+                <option value="admin">Admin</option>
+                <option value="business_owner">Business Owner</option>
+                <option value="manager">Manager</option>
+                <option value="employee">Employee</option>
+            </select>
+            <input type="text" id="searchInput" placeholder="Search users..." 
+                   class="rounded border p-2 flex-grow">
+        </div>
+
+        <!-- Users Table -->
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expert</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for user in users %}
+                    <tr class="user-row" data-role="{{ user.role }}">
+                        <td class="px-6 py-4 whitespace-nowrap">{{ user.name }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">{{ user.username }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">{{ user.email }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                {{ user.role | title }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <button onclick="toggleExpertStatus('{{ user._id }}', {{ 'true' if user.is_expert else 'false' }})"
+                                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                    {% if user.is_expert %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ 'Expert' if user.is_expert else 'Not Expert' }}
+                            </button>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                {% if user.profile_status == 'active' %}bg-green-100 text-green-800
+                                {% else %}bg-red-100 text-red-800{% endif %}">
+                                {{ user.profile_status | upper }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button onclick="viewUser('{{ user._id }}')"
+                                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded mr-2">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                            <button onclick="toggleUserStatus('{{ user._id }}', '{{ user.profile_status }}')"
+                                    class="{% if user.profile_status == 'active' %}bg-red-500 hover:bg-red-700
+                                           {% else %}bg-green-500 hover:bg-green-700{% endif %} 
+                                           text-white font-bold py-1 px-3 rounded">
+                                <i class="fas {% if user.profile_status == 'active' %}fa-ban{% else %}fa-check{% endif %}"></i>
+                                {{ 'Deactivate' if user.profile_status == 'active' else 'Activate' }}
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+// Get CSRF token once at the start
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+function toggleExpertStatus(userId, currentStatus) {
+    fetch(`/user/${userId}/update`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({
+            is_expert: !currentStatus
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Expert status updated successfully', 'success');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showNotification(data.error || 'Error updating expert status', 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Error updating expert status', 'error');
+    });
+}
+
+function toggleUserStatus(userId, currentStatus) {
+    if (confirm(`Are you sure you want to ${currentStatus === 'active' ? 'deactivate' : 'activate'} this user?`)) {
+        fetch(`/toggle_user_status/${userId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(`User ${currentStatus === 'active' ? 'deactivated' : 'activated'} successfully`, 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showNotification(data.error || 'Error updating user status', 'error');
+            }
+        })
+        .catch(error => {
+            showNotification('Error updating user status', 'error');
+        });
+    }
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg ${
+        type === 'error' ? 'bg-red-500' : 'bg-green-500'
+    } text-white`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+
+function viewUser(userId) {
+    window.location.href = `/view_user/${userId}`;
+}
+
+function exportUsers() {
+    window.location.href = '/export_users';
+}
+
+// Filter functionality
+document.getElementById('roleFilter').addEventListener('change', filterUsers);
+document.getElementById('searchInput').addEventListener('input', filterUsers);
+
+function filterUsers() {
+    const roleFilter = document.getElementById('roleFilter').value;
+    const searchQuery = document.getElementById('searchInput').value.toLowerCase();
+    
+    document.querySelectorAll('.user-row').forEach(row => {
+        const role = row.getAttribute('data-role');
+        const content = row.textContent.toLowerCase();
+        
+        const matchesRole = roleFilter === 'all' || role === roleFilter;
+        const matchesSearch = content.includes(searchQuery);
+        
+        row.style.display = matchesRole && matchesSearch ? '' : 'none';
+    });
+}
+
+// Add event listeners after DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize tooltips if needed
+    // Add any other initialization code here
+});
+</script>
+{% endblock %}

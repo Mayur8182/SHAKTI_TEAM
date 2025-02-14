@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+
+{% block title %}View User - {{ user.username }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <a href="{{ url_for('manage_users') }}" class="back-button">
+        <i class="fas fa-arrow-left"></i> Back to Users List
+    </a>
+    <!-- User Details Card -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold">User Details</h2>
+            <button onclick="window.history.back()"
+                    class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+                <i class="fas fa-arrow-left mr-2"></i>Back
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-4">
+                <div>
+                    <label class="text-gray-600">Username:</label>
+                    <p class="font-medium">{{ user.username }}</p>
+                </div>
+                <div>
+                    <label class="text-gray-600">Full Name:</label>
+                    <p class="font-medium">{{ user.name }}</p>
+                </div>
+                <div>
+                    <label class="text-gray-600">Email:</label>
+                    <p class="font-medium">{{ user.email }}</p>
+                </div>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="text-gray-600">Role:</label>
+                    <span class="px-2 py-1 text-sm font-semibold rounded-full bg-blue-100 text-blue-800">
+                        {{ user.role | title }}
+                    </span>
+                </div>
+                <div>
+                    <label class="text-gray-600">Status:</label>
+                    <span class="px-2 py-1 text-sm font-semibold rounded-full 
+                        {% if user.status == 'active' %}bg-green-100 text-green-800
+                        {% else %}bg-red-100 text-red-800{% endif %}">
+                        {{ user.status | title }}
+                    </span>
+                </div>
+                <div>
+                    <label class="text-gray-600">Expert Status:</label>
+                    <span class="px-2 py-1 text-sm font-semibold rounded-full 
+                        {% if user.is_expert %}bg-purple-100 text-purple-800
+                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                        {{ 'Expert' if user.is_expert else 'Not Expert' }}
+                    </span>
+                </div>
+                <div>
+                    <label class="text-gray-600">Joined On:</label>
+                    <p class="font-medium">{{ user.created_at.strftime('%Y-%m-%d %H:%M:%S') if user.created_at else 'Not Available' }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Applications -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+        <h3 class="text-xl font-bold mb-4">Applications</h3>
+        {% if applications %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Business Name</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for app in applications %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            {{ app.created_at.strftime('%Y-%m-%d %H:%M:%S') if app.created_at else 'Not Available' }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {{ app.business_name }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                {% if app.status == 'approved' %}bg-green-100 text-green-800
+                                {% elif app.status == 'rejected' %}bg-red-100 text-red-800
+                                {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                                {{ app.status | upper }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <a href="{{ url_for('view_application', application_id=app._id) }}"
+                               class="text-blue-600 hover:text-blue-900">
+                                <i class="fas fa-eye mr-1"></i>View
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-gray-500">No applications found.</p>
+        {% endif %}
+    </div>
+
+    <!-- User Activities -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <h3 class="text-xl font-bold mb-4">Recent Activities</h3>
+        {% if activities %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Activity Type</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for activity in activities %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            {{ activity.timestamp.strftime('%Y-%m-%d %H:%M:%S') if activity.timestamp else 'Not Available' }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                {% if activity.activity_type == 'login' %}bg-green-100 text-green-800
+                                {% elif activity.activity_type == 'application' %}bg-blue-100 text-blue-800
+                                {% elif activity.activity_type == 'profile' %}bg-purple-100 text-purple-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ activity.activity_type | title }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="text-sm text-gray-900">{{ activity.description }}</div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-gray-500">No activities found.</p>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg ${
+        type === 'error' ? 'bg-red-500' : 'bg-green-500'
+    } text-white`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+</script>
+{% endblock %}

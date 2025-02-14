@@ -1,0 +1,239 @@
+{% extends 'base.html' %}
+
+{% block title %}Inspection Reports{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-100 py-6">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="bg-white shadow-lg rounded-lg p-6">
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-2xl font-bold text-gray-900">Inspection Reports</h1>
+                <div class="flex space-x-3">
+                    <div class="relative">
+                        <input type="text" id="searchInput" 
+                               class="w-64 pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                               placeholder="Search reports...">
+                        <div class="absolute left-3 top-2.5">
+                            <i class="fas fa-search text-gray-400"></i>
+                        </div>
+                    </div>
+                    <button onclick="exportReports('pdf')" 
+                            class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+                        <i class="fas fa-download mr-2"></i>Export All
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-blue-100 p-4 rounded-lg">
+                    <h3 class="text-blue-800 text-lg font-semibold">Total Reports</h3>
+                    <p class="text-2xl font-bold text-blue-900" id="totalReports">0</p>
+                </div>
+                <div class="bg-green-100 p-4 rounded-lg">
+                    <h3 class="text-green-800 text-lg font-semibold">Completed</h3>
+                    <p class="text-2xl font-bold text-green-900" id="completedReports">0</p>
+                </div>
+                <div class="bg-yellow-100 p-4 rounded-lg">
+                    <h3 class="text-yellow-800 text-lg font-semibold">This Month</h3>
+                    <p class="text-2xl font-bold text-yellow-900" id="monthlyReports">0</p>
+                </div>
+                <div class="bg-purple-100 p-4 rounded-lg">
+                    <h3 class="text-purple-800 text-lg font-semibold">Success Rate</h3>
+                    <p class="text-2xl font-bold text-purple-900" id="successRate">0%</p>
+                </div>
+            </div>
+
+            <!-- Reports Table -->
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Business</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Inspector</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200" id="reportsTableBody">
+                        {% for report in reports %}
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap">{{ report.date }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">{{ report.business_name }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">{{ report.inspector_name }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                    {% if report.status == 'completed' %}bg-green-100 text-green-800
+                                    {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                                    {{ report.status }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex space-x-3">
+                                    <a href="{{ report.report_url }}" 
+                                       class="text-blue-600 hover:text-blue-900">
+                                        <i class="fas fa-download mr-1"></i>Download
+                                    </a>
+                                    <button onclick="viewReportDetails('{{ report._id }}')"
+                                            class="text-green-600 hover:text-green-900">
+                                        <i class="fas fa-eye mr-1"></i>View
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="mt-4 flex items-center justify-between">
+                <div class="flex-1 flex justify-between sm:hidden">
+                    <button class="btn-pagination" id="prevPage">Previous</button>
+                    <button class="btn-pagination" id="nextPage">Next</button>
+                </div>
+                <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-sm text-gray-700">
+                            Showing <span id="startRange">1</span> to <span id="endRange">10</span> of
+                            <span id="totalItems">0</span> results
+                        </p>
+                    </div>
+                    <div id="paginationContainer" class="flex space-x-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Report Details Modal -->
+<div id="reportModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold">Inspection Report Details</h3>
+            <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div id="reportDetails" class="mt-4"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    updateStats();
+    setupSearch();
+    setupPagination();
+});
+
+function updateStats() {
+    const reports = {{ reports|tojson|safe }};
+    document.getElementById('totalReports').textContent = reports.length;
+    
+    const completed = reports.filter(r => r.status === 'completed').length;
+    document.getElementById('completedReports').textContent = completed;
+    
+    const thisMonth = reports.filter(r => {
+        const reportDate = new Date(r.date);
+        const now = new Date();
+        return reportDate.getMonth() === now.getMonth() && 
+               reportDate.getFullYear() === now.getFullYear();
+    }).length;
+    document.getElementById('monthlyReports').textContent = thisMonth;
+    
+    const successRate = reports.length > 0 ? 
+        Math.round((completed / reports.length) * 100) : 0;
+    document.getElementById('successRate').textContent = `${successRate}%`;
+}
+
+function setupSearch() {
+    const searchInput = document.getElementById('searchInput');
+    searchInput.addEventListener('keyup', function() {
+        const searchTerm = this.value.toLowerCase();
+        const rows = document.querySelectorAll('#reportsTableBody tr');
+        
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(searchTerm) ? '' : 'none';
+        });
+    });
+}
+
+function viewReportDetails(reportId) {
+    const reports = {{ reports|tojson|safe }};
+    const report = reports.find(r => r._id === reportId);
+    
+    if (report) {
+        const detailsHtml = `
+            <div class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Business Name</p>
+                        <p class="mt-1">${report.business_name}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Inspector</p>
+                        <p class="mt-1">${report.inspector_name}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Date</p>
+                        <p class="mt-1">${report.date}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Status</p>
+                        <p class="mt-1">${report.status}</p>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <h4 class="text-lg font-medium">Findings</h4>
+                    <pre class="mt-2 bg-gray-50 p-4 rounded-lg overflow-x-auto">
+                        ${JSON.stringify(report.findings, null, 2)}
+                    </pre>
+                </div>
+                
+                <div class="mt-4 flex justify-end">
+                    <a href="${report.report_url}" 
+                       class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+                        Download Full Report
+                    </a>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('reportDetails').innerHTML = detailsHtml;
+        document.getElementById('reportModal').classList.remove('hidden');
+    }
+}
+
+function closeModal() {
+    document.getElementById('reportModal').classList.add('hidden');
+}
+
+async function exportReports(format) {
+    try {
+        const response = await fetch(`/export-inspection-reports/${format}`);
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `inspection_reports.${format}`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            a.remove();
+        } else {
+            throw new Error('Export failed');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to export reports');
+    }
+}
+</script>
+{% endblock %}

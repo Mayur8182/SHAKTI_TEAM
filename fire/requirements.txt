@@ -1,0 +1,15 @@
+Flask==2.3.3
+Flask-Mail==0.9.1
+Flask-WTF==1.0.1
+Flask-SocketIO==5.3.1
+bcrypt==4.0.1
+pymongo==4.5.0
+pillow==9.1.0
+pytesseract==0.3.9
+python-dotenv==0.20.0
+werkzeug==2.3.4
+
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USERNAME'] = 'mbharvad@gmail.com'
+app.config['MAIL_PASSWORD'] = 'dwt fmiq miyl ccvq'

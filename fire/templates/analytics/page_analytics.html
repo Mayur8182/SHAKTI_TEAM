@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <a href="{{ url_for('admin_dashboard') }}" class="back-button">
+        <i class="fas fa-arrow-left"></i> Back to Dashboard
+    </a>
+
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-red-600">Page Analytics</h1>
+        <div class="space-x-2">
+            <a href="{{ url_for('export_page_analytics', format='csv') }}" 
+               class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 inline-flex items-center">
+                <i class="fas fa-file-csv mr-2"></i> Export CSV
+            </a>
+            <a href="{{ url_for('export_page_analytics', format='pdf') }}" 
+               class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 inline-flex items-center">
+                <i class="fas fa-file-pdf mr-2"></i> Export PDF
+            </a>
+        </div>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Stats cards -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-4">Total Applications</h2>
+            <p class="text-4xl font-bold text-blue-600">{{ total_applications }}</p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-4">Approved Applications</h2>
+            <p class="text-4xl font-bold text-green-600">{{ approved_applications }}</p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-4">Pending Applications</h2>
+            <p class="text-4xl font-bold text-yellow-600">{{ pending_applications }}</p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-4">Rejected Applications</h2>
+            <p class="text-4xl font-bold text-red-600">{{ rejected_applications }}</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-12">
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-4">Application Status Distribution</h2>
+            <canvas id="applicationStatusChart"></canvas>
+        </div>
+        
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-bold mb-6 text-red-600">Recent Activities</h2>
+            <table class="w-full">
+                <thead>
+                    <tr class="bg-gray-100">
+                        <th class="p-3 text-left">Activity Type</th>
+                        <th class="p-3 text-left">Description</th>
+                        <th class="p-3 text-left">Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for activity in recent_activities %}
+                    <tr class="border-b">
+                        <td class="p-3">{{ activity.activity_type }}</td>
+                        <td class="p-3">{{ activity.description }}</td>
+                        <td class="p-3">{{ activity.timestamp }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var ctx = document.getElementById('applicationStatusChart').getContext('2d');
+    var chart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: ['Total', 'Approved', 'Pending', 'Rejected'],
+            datasets: [{
+                data: [
+                    {{ total_applications }}, 
+                    {{ approved_applications }}, 
+                    {{ pending_applications }}, 
+                    {{ rejected_applications }}
+                ],
+                backgroundColor: [
+                    'rgba(54, 162, 235, 0.6)',   // Total - Blue
+                    'rgba(75, 192, 192, 0.6)',   // Approved - Green
+                    'rgba(255, 206, 86, 0.6)',   // Pending - Yellow
+                    'rgba(255, 99, 132, 0.6)'    // Rejected - Red
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                datalabels: {
+                    color: '#fff',
+                    formatter: function(value, context) {
+                        return value;
+                    }
+                },
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        },
+        plugins: [ChartDataLabels]
+    });
+});
+</script>
+{% endblock %}

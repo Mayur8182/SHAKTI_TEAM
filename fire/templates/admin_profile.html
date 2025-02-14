@@ -1,0 +1,246 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Profile{% endblock %}
+
+{% block content %}
+<div class="flex h-screen bg-gray-100">
+    <!-- Sidebar -->
+    <div class="w-64 bg-white shadow-lg">
+        <div class="p-4">
+            <div class="flex items-center mb-6">
+                <img src="{{ url_for('serve_profile_image', filename=user.profile_image or 'default-profile.png') }}" 
+                     alt="Profile" 
+                     class="w-12 h-12 rounded-full mr-3 object-cover border-2 border-blue-500">
+                <div>
+                    <h2 class="text-lg font-semibold">{{ user.name }}</h2>
+                    <p class="text-sm text-gray-600">{{ user.role | title }}</p>
+                </div>
+            </div>
+            <nav>
+                <a href="{{ url_for('admin_profile') }}" 
+                   class="flex items-center p-3 bg-blue-50 text-blue-700 rounded-lg mb-2">
+                    <i class="fas fa-user-circle mr-3"></i>
+                    My Profile
+                </a>
+                <a href="{{ url_for('admin_dashboard') }}" 
+                   class="flex items-center p-3 text-gray-700 hover:bg-blue-50 rounded-lg mb-2">
+                    <i class="fas fa-home mr-3"></i>
+                    Dashboard
+                </a>
+                <a href="{{ url_for('manage_applications') }}" 
+                   class="flex items-center p-3 text-gray-700 hover:bg-blue-50 rounded-lg mb-2">
+                    <i class="fas fa-file-alt mr-3"></i>
+                    Applications
+                </a>
+                <a href="{{ url_for('manage_users') }}" 
+                   class="flex items-center p-3 text-gray-700 hover:bg-blue-50 rounded-lg mb-2">
+                    <i class="fas fa-users mr-3"></i>
+                    Users
+                </a>
+                <a href="{{ url_for('user_activities') }}" 
+                   class="flex items-center p-3 text-gray-700 hover:bg-blue-50 rounded-lg mb-2">
+                    <i class="fas fa-history mr-3"></i>
+                    Activities
+                </a>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex-1 overflow-x-hidden overflow-y-auto">
+        <div class="container mx-auto px-6 py-8">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold">My Profile</h2>
+                    <button onclick="toggleEditMode()" 
+                            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                        <i class="fas fa-edit mr-2"></i>Edit Profile
+                    </button>
+                </div>
+
+                <!-- Profile Image Section -->
+                <div class="mb-8 text-center">
+                    <div class="relative inline-block">
+                        <img id="profileImage" 
+                             src="{{ url_for('serve_profile_image', filename=user.profile_image or 'default-profile.png') }}"
+                             alt="Profile Picture"
+                             class="w-32 h-32 rounded-full object-cover border-4 border-blue-500 mb-4">
+                        <label for="imageUpload" 
+                               class="absolute bottom-0 right-0 bg-blue-500 text-white rounded-full p-2 cursor-pointer hover:bg-blue-600">
+                            <i class="fas fa-camera"></i>
+                        </label>
+                        <input type="file" 
+                               id="imageUpload" 
+                               accept="image/*" 
+                               class="hidden"
+                               onchange="uploadProfileImage(this)">
+                    </div>
+                </div>
+
+                <!-- Profile Details -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="name">Full Name</label>
+                            <input type="text" 
+                                   id="name" 
+                                   value="{{ user.name }}" 
+                                   class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                   disabled>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="email">Email</label>
+                            <input type="email" 
+                                   id="email" 
+                                   value="{{ user.email }}" 
+                                   class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                   disabled>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="phone">Phone</label>
+                            <input type="tel" 
+                                   id="phone" 
+                                   value="{{ user.phone }}" 
+                                   class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                   disabled>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="username">Username</label>
+                            <input type="text" 
+                                   id="username" 
+                                   value="{{ user.username }}" 
+                                   class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                   disabled>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="role">Role</label>
+                            <input type="text" 
+                                   id="role" 
+                                   value="{{ user.role | title }}" 
+                                   class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                   disabled>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="joined">Joined On</label>
+                            <input type="text" 
+                                   id="joined" 
+                                   value="{{ user.created_at.strftime('%Y-%m-%d %H:%M:%S') if user.created_at else 'Not Available' }}" 
+                                   class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                   disabled>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Save Changes Button -->
+                <div class="mt-6 text-right hidden" id="saveButtons">
+                    <button onclick="cancelEdit()" 
+                            class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded mr-2">
+                        Cancel
+                    </button>
+                    <button onclick="saveChanges()" 
+                            class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                        Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="flex h-screen bg-gray-100">
+    <div class="w-64 bg-white shadow-lg">
+        <a href="{{ url_for('admin_dashboard') }}" class="back-button">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<script>
+let editMode = false;
+const editableFields = ['name', 'email', 'phone'];
+
+function toggleEditMode() {
+    editMode = !editMode;
+    editableFields.forEach(field => {
+        const input = document.getElementById(field);
+        input.disabled = !editMode;
+        if (editMode) {
+            input.classList.add('border-blue-500');
+        } else {
+            input.classList.remove('border-blue-500');
+        }
+    });
+    document.getElementById('saveButtons').style.display = editMode ? 'block' : 'none';
+}
+
+function cancelEdit() {
+    location.reload();
+}
+
+async function saveChanges() {
+    const formData = new FormData();
+    editableFields.forEach(field => {
+        formData.append(field, document.getElementById(field).value);
+    });
+
+    try {
+        const response = await fetch('/api/v1/admin/profile/update', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: formData
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            showNotification('Profile updated successfully', 'success');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showNotification(data.error || 'Error updating profile', 'error');
+        }
+    } catch (error) {
+        showNotification('Error updating profile', 'error');
+    }
+}
+
+async function uploadProfileImage(input) {
+    if (input.files && input.files[0]) {
+        const formData = new FormData();
+        formData.append('image', input.files[0]);
+
+        try {
+            const response = await fetch('/api/v1/admin/profile/update_image', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: formData
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                document.getElementById('profileImage').src = URL.createObjectURL(input.files[0]);
+                showNotification('Profile image updated successfully', 'success');
+            } else {
+                showNotification(data.error || 'Error updating profile image', 'error');
+            }
+        } catch (error) {
+            showNotification('Error updating profile image', 'error');
+        }
+    }
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg ${
+        type === 'error' ? 'bg-red-500' : 'bg-green-500'
+    } text-white`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+</script>
+{% endblock %}

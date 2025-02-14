@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6 text-red-600">Detailed Reports</h1>
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {% for report_type in report_types %}
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-4">{{ report_type._id or 'Uncategorized' }}</h2>
+            <p class="text-4xl font-bold text-blue-600">{{ report_type.count }}</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-2xl font-bold mb-6 text-red-600">All Reports</h2>
+        <table class="w-full">
+            <thead>
+                <tr class="bg-gray-100">
+                    <th class="p-3 text-left">Report ID</th>
+                    <th class="p-3 text-left">Type</th>
+                    <th class="p-3 text-left">Description</th>
+                    <th class="p-3 text-left">Created At</th>
+                    <th class="p-3 text-left">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for report in reports %}
+                <tr class="border-b">
+                    <td class="p-3">{{ report._id }}</td>
+                    <td class="p-3">{{ report.type or 'N/A' }}</td>
+                    <td class="p-3">{{ report.description or 'No description' }}</td>
+                    <td class="p-3">{{ report.timestamp }}</td>
+                    <td class="p-3">
+                        <a href="{{ url_for('download_report', report_id=report._id) }}" 
+                           class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">
+                            Download
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

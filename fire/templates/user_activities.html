@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+
+{% block title %}User Activities{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <a href="{{ url_for('admin_dashboard') }}" class="back-button">
+        <i class="fas fa-arrow-left"></i> Back to Dashboard
+    </a>
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold">User Activities</h2>
+            <div class="flex space-x-2">
+                <button onclick="window.history.back()"
+                        class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+                    <i class="fas fa-arrow-left mr-2"></i>Back
+                </button>
+            </div>
+        </div>
+
+        <!-- Filter Controls -->
+        <div class="mb-6 flex gap-4">
+            <select id="activityFilter" class="rounded border p-2">
+                <option value="all">All Activities</option>
+                <option value="login">Login</option>
+                <option value="application">Application</option>
+                <option value="profile">Profile</option>
+                <option value="user">User Management</option>
+            </select>
+            <input type="text" id="searchInput" placeholder="Search activities..." 
+                   class="rounded border p-2 flex-grow">
+        </div>
+
+        <!-- Activities Table -->
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Activity Type</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for activity in activities %}
+                    <tr class="activity-row" data-type="{{ activity.activity_type }}">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            {{ activity.timestamp.strftime('%Y-%m-%d %H:%M:%S') if activity.timestamp else 'Not Available' }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                {{ activity.username }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                {% if activity.activity_type == 'login' %}bg-green-100 text-green-800
+                                {% elif activity.activity_type == 'application' %}bg-blue-100 text-blue-800
+                                {% elif activity.activity_type == 'profile' %}bg-purple-100 text-purple-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ activity.activity_type | title }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="text-sm text-gray-900">{{ activity.description }}</div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="mt-4 flex items-center justify-between">
+            <div class="flex-1 flex justify-between sm:hidden">
+                <button onclick="previousPage()" 
+                        class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    Previous
+                </button>
+                <button onclick="nextPage()"
+                        class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    Next
+                </button>
+            </div>
+            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                    <p class="text-sm text-gray-700">
+                        Showing page <span id="currentPage">1</span>
+                    </p>
+                </div>
+                <div>
+                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                        <button onclick="previousPage()"
+                                class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <button onclick="nextPage()"
+                                class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentPage = 1;
+const itemsPerPage = 10;
+
+// Filter functionality
+document.getElementById('activityFilter').addEventListener('change', filterActivities);
+document.getElementById('searchInput').addEventListener('input', filterActivities);
+
+function filterActivities() {
+    const typeFilter = document.getElementById('activityFilter').value;
+    const searchQuery = document.getElementById('searchInput').value.toLowerCase();
+    
+    document.querySelectorAll('.activity-row').forEach(row => {
+        const type = row.getAttribute('data-type');
+        const content = row.textContent.toLowerCase();
+        
+        const matchesType = typeFilter === 'all' || type === typeFilter;
+        const matchesSearch = content.includes(searchQuery);
+        
+        row.style.display = matchesType && matchesSearch ? '' : 'none';
+    });
+    
+    // Reset pagination after filtering
+    currentPage = 1;
+    updatePage();
+}
+
+function previousPage() {
+    if (currentPage > 1) {
+        currentPage--;
+        updatePage();
+    }
+}
+
+function nextPage() {
+    const totalRows = document.querySelectorAll('.activity-row:not([style*="display: none"])').length;
+    if (currentPage * itemsPerPage < totalRows) {
+        currentPage++;
+        updatePage();
+    }
+}
+
+function updatePage() {
+    document.getElementById('currentPage').textContent = currentPage;
+    
+    const rows = document.querySelectorAll('.activity-row:not([style*="display: none"])');
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    
+    rows.forEach((row, index) => {
+        if (index >= startIndex && index < endIndex) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+// Initialize pagination on load
+document.addEventListener('DOMContentLoaded', function() {
+    updatePage();
+});
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg ${
+        type === 'error' ? 'bg-red-500' : 'bg-green-500'
+    } text-white`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+</script>
+{% endblock %}

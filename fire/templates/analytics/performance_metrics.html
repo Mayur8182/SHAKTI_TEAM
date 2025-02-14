@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-red-600">Performance Metrics</h1>
+        <div class="space-x-2">
+            <a href="{{ url_for('export_performance_metrics', format='csv') }}" 
+               class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 inline-flex items-center">
+                <i class="fas fa-file-csv mr-2"></i> Export CSV
+            </a>
+            <a href="{{ url_for('export_performance_metrics', format='pdf') }}" 
+               class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 inline-flex items-center">
+                <i class="fas fa-file-pdf mr-2"></i> Export PDF
+            </a>
+        </div>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-4">Application Processing Times</h2>
+            <canvas id="processingTimesChart"></canvas>
+        </div>
+        
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-4">User Performance</h2>
+            <canvas id="userPerformanceChart"></canvas>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Processing Times Chart
+    var processingCtx = document.getElementById('processingTimesChart').getContext('2d');
+    var processingChart = new Chart(processingCtx, {
+        type: 'bar',
+        data: {
+            labels: [
+                {% for time in processing_times %}
+                    "{{ time._id }}",
+                {% endfor %}
+            ],
+            datasets: [{
+                label: 'Average Processing Time (Hours)',
+                data: [
+                    {% for time in processing_times %}
+                        {{ (time.avg_processing_time / 3600000)|round(2) if time.avg_processing_time is not none else 0 }},
+                    {% endfor %}
+                ],
+                backgroundColor: [
+                    'rgba(54, 162, 235, 0.6)',
+                    'rgba(255, 206, 86, 0.6)',
+                    'rgba(75, 192, 192, 0.6)'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Processing Time (Hours)'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top'
+                }
+            }
+        }
+    });
+
+    // User Performance Chart
+    var userCtx = document.getElementById('userPerformanceChart').getContext('2d');
+    var userChart = new Chart(userCtx, {
+        type: 'bar',
+        data: {
+            labels: [
+                {% for user in user_performance %}
+                    "{{ user._id }}",
+                {% endfor %}
+            ],
+            datasets: [
+                {
+                    label: 'Total Applications',
+                    data: [
+                        {% for user in user_performance %}
+                            {{ user.total_applications }},
+                        {% endfor %}
+                    ],
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)'
+                },
+                {
+                    label: 'Approved Applications',
+                    data: [
+                        {% for user in user_performance %}
+                            {{ user.approved_applications }},
+                        {% endfor %}
+                    ],
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Number of Applications'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top'
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}
