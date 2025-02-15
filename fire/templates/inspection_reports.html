@@ -124,6 +124,8 @@
 
 {% block scripts %}
 <script>
+let reportsData = {{ reports|tojson|safe }};
+
 document.addEventListener('DOMContentLoaded', function() {
     updateStats();
     setupSearch();
@@ -131,13 +133,12 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function updateStats() {
-    const reports = {{ reports|tojson|safe }};
-    document.getElementById('totalReports').textContent = reports.length;
+    document.getElementById('totalReports').textContent = reportsData.length;
     
-    const completed = reports.filter(r => r.status === 'completed').length;
+    const completed = reportsData.filter(r => r.status === 'completed').length;
     document.getElementById('completedReports').textContent = completed;
     
-    const thisMonth = reports.filter(r => {
+    const thisMonth = reportsData.filter(r => {
         const reportDate = new Date(r.date);
         const now = new Date();
         return reportDate.getMonth() === now.getMonth() && 
@@ -145,8 +146,8 @@ function updateStats() {
     }).length;
     document.getElementById('monthlyReports').textContent = thisMonth;
     
-    const successRate = reports.length > 0 ? 
-        Math.round((completed / reports.length) * 100) : 0;
+    const successRate = reportsData.length > 0 ? 
+        Math.round((completed / reportsData.length) * 100) : 0;
     document.getElementById('successRate').textContent = `${successRate}%`;
 }
 
@@ -164,8 +165,7 @@ function setupSearch() {
 }
 
 function viewReportDetails(reportId) {
-    const reports = {{ reports|tojson|safe }};
-    const report = reports.find(r => r._id === reportId);
+    const report = reportsData.find(r => r._id === reportId);
     
     if (report) {
         const detailsHtml = `
@@ -190,24 +190,82 @@ function viewReportDetails(reportId) {
                 </div>
                 
                 <div class="mt-4">
-                    <h4 class="text-lg font-medium">Findings</h4>
-                    <pre class="mt-2 bg-gray-50 p-4 rounded-lg overflow-x-auto">
-                        ${JSON.stringify(report.findings, null, 2)}
-                    </pre>
+                    <h4 class="text-lg font-medium">Actions</h4>
+                    <div class="flex space-x-4 mt-2">
+                        <button onclick="generateReport('${reportId}')" 
+                                class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">
+                            Generate Report
+                        </button>
+                        ${report.report_url ? `
+                            <a href="${report.report_url}" 
+                               class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+                                Download Report
+                            </a>
+                        ` : ''}
+                    </div>
                 </div>
                 
-                <div class="mt-4 flex justify-end">
-                    <a href="${report.report_url}" 
-                       class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
-                        Download Full Report
-                    </a>
-                </div>
+                ${report.findings ? `
+                    <div class="mt-4">
+                        <h4 class="text-lg font-medium">Findings</h4>
+                        <pre class="mt-2 bg-gray-50 p-4 rounded-lg overflow-x-auto">
+                            ${JSON.stringify(report.findings, null, 2)}
+                        </pre>
+                    </div>
+                ` : ''}
             </div>
         `;
         
         document.getElementById('reportDetails').innerHTML = detailsHtml;
         document.getElementById('reportModal').classList.remove('hidden');
     }
+}
+
+async function generateReport(inspectionId) {
+    try {
+        const response = await fetch(`/api/inspection/${inspectionId}/complete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({
+                inspection_id: inspectionId,
+                report_data: {
+                    findings: [],
+                    recommendations: [],
+                    compliance_status: 'compliant'
+                }
+            })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            showNotification('Report generated successfully', 'success');
+            if (data.report_url) {
+                window.open(data.report_url, '_blank');
+            }
+            // Refresh the page to show updated report status
+            window.location.reload();
+        } else {
+            showNotification(data.error || 'Failed to generate report', 'error');
+        }
+    } catch (error) {
+        console.error('Error generating report:', error);
+        showNotification('Failed to generate report', 'error');
+    }
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 p-4 rounded-lg text-white ${
+        type === 'success' ? 'bg-green-500' : 
+        type === 'error' ? 'bg-red-500' : 
+        'bg-blue-500'
+    }`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
 }
 
 function closeModal() {
@@ -228,11 +286,11 @@ async function exportReports(format) {
             window.URL.revokeObjectURL(url);
             a.remove();
         } else {
-            throw new Error('Export failed');
+            showNotification('Failed to export reports', 'error');
         }
     } catch (error) {
-        console.error('Error:', error);
-        alert('Failed to export reports');
+        console.error('Error exporting reports:', error);
+        showNotification('Failed to export reports', 'error');
     }
 }
 </script>

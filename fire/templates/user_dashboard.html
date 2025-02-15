@@ -9,6 +9,12 @@
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.0.3/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        .logo-container {
+            text-align: center;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
         :root {
             --primary-color: #2563eb;
             --secondary-color: #1e40af;
@@ -86,7 +92,16 @@
             border-radius: 4px;
             overflow: hidden;
         }
-
+        .logo {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            padding: 5px;
+            background: linear-gradient(45deg, #990000, #ff4d4d);
+            margin-bottom: 20px;
+            transition: all 0.5s ease;
+            animation: logoSpin 20s linear infinite;
+        }
         .progress-fill {
             height: 100%;
             background: var(--accent-color);
@@ -99,8 +114,15 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .step {
@@ -123,7 +145,7 @@
             background-color: rgba(255, 255, 255, 0.1);
         }
 
-        #profileImageUpload:hover + label {
+        #profileImageUpload:hover+label {
             background-color: #f3f4f6;
         }
 
@@ -139,50 +161,10 @@
     <div class="dashboard-container">
         <div class="d-flex">
             <div class="sidebar w-64">
-                <div class="text-center mb-4">
-                    <img src="/logo.png" alt="AEK Logo" class="w-24 h-24 mx-auto mb-4">
-                    <h2 class="text-xl font-bold text-white">AEK NOC System</h2>
-                </div>
-
-                <div class="user-profile border-t border-b border-blue-700 py-4 mb-4">
-                    <div class="text-center">
-                        <div class="relative inline-block">
-                            <img id="userProfileImage" 
-                                 src="/static/default-profile.png" 
-                                 alt="Profile" 
-                                 class="w-20 h-20 rounded-full object-cover border-2 border-white mx-auto">
-                            <label for="profileImageUpload" class="absolute bottom-0 right-0 bg-white rounded-full p-1 cursor-pointer shadow-md">
-                                <i class="fas fa-camera text-gray-600"></i>
-                            </label>
-                            <input type="file" id="profileImageUpload" class="hidden" accept="image/*" onchange="uploadProfileImage(event)">
-                        </div>
-                        <h3 id="userName" class="text-white font-medium mt-2"></h3>
-                        <span id="userRole" class="inline-block bg-blue-200 text-blue-800 text-xs px-2 py-1 rounded-full mt-1"></span>
-                    </div>
-                    
-                    <div class="text-white text-sm mt-3 px-4">
-                        <div class="flex items-center mb-2">
-                            <i class="fas fa-envelope w-5"></i>
-                            <span id="userEmail" class="ml-2 truncate"></span>
-                        </div>
-                        <div class="flex items-center mb-2">
-                            <i class="fas fa-phone w-5"></i>
-                            <span id="userPhone" class="ml-2"></span>
-                        </div>
-                        <div class="flex items-center">
-                            <i class="fas fa-clock w-5"></i>
-                            <span id="lastLogin" class="ml-2 text-xs"></span>
-                        </div>
-                    </div>
-
-                    <div class="flex justify-center mt-3 space-x-2">
-                        <button onclick="editProfile()" class="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded">
-                            <i class="fas fa-edit mr-1"></i>Edit
-                        </button>
-                        <button onclick="logout()" class="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded">
-                            <i class="fas fa-sign-out-alt mr-1"></i>Logout
-                        </button>
-                    </div>
+                <div class="logo-container">
+                    <img src="https://tse3.mm.bing.net/th?id=OIP.8LC-0Es7mqVzfE_ElrEdDQAAAA&pid=Api&P=0&h=180"
+                        alt="Company Logo" class="logo">
+                    <h1 class="title">AEK NOC System</h1>
                 </div>
 
                 <nav class="space-y-2">
@@ -201,6 +183,12 @@
                     <button class="nav-link w-full text-left" onclick="showSection('reports')">
                         <i class="fas fa-chart-bar mr-2"></i> Reports
                     </button>
+                    <button class="nav-item">
+                        <a href="/logout" class="nav-link">
+                            <i class="fas fa-file-alt"></i>
+                            <span>Sign Out</span>
+                        </a>
+                    </button>
                 </nav>
             </div>
 
@@ -209,15 +197,14 @@
                     <div class="bg-white p-6 rounded-lg shadow-sm mb-8">
                         <div class="flex items-center space-x-4">
                             <div class="profile-image">
-                                <img id="userProfileImage" 
-                                     src="/static/default-profile.png" 
-                                     alt="Profile" 
-                                     class="w-20 h-20 rounded-full object-cover border-4 border-primary">
+                                <img id="userProfileImage" src="/static/default-profile.png" alt="Profile"
+                                    class="w-20 h-20 rounded-full object-cover border-4 border-primary">
                             </div>
                             <div class="profile-info flex-1">
                                 <h1 class="text-3xl font-bold mb-2" id="userName">Welcome</h1>
                                 <div class="flex items-center space-x-4 text-gray-600">
-                                    <span id="userRole" class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm"></span>
+                                    <span id="userRole"
+                                        class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm"></span>
                                     <span id="userEmail" class="flex items-center">
                                         <i class="fas fa-envelope mr-2"></i>
                                     </span>
@@ -237,7 +224,7 @@
                     <div class="bg-white p-6 rounded-lg shadow-sm mb-8">
                         <h3 class="text-xl font-semibold mb-4">Application Progress</h3>
                         <div class="progress-bar mb-4">
-                            <div class="progress-fill" id="progress-bar-fill" style="width: 0%"></div> 
+                            <div class="progress-fill" id="progress-bar-fill" style="width: 0%"></div>
                         </div>
                         <div class="grid grid-cols-3 gap-4">
                             <div class="text-center">
@@ -275,7 +262,7 @@
                     <div class="bg-white p-6 rounded-lg shadow-sm">
                         <h3 class="text-xl font-semibold mb-4">Recent Activities</h3>
                         <div class="space-y-4" id="recent-activities">
-                            </div>
+                        </div>
                     </div>
                 </section>
 
@@ -325,7 +312,8 @@
                                 <div class="grid grid-cols-2 gap-6">
                                     <div>
                                         <label class="block mb-2">Number of Fire Extinguishers</label>
-                                        <input type="number" class="form-control" id="fireExtinguishers" min="0" required>
+                                        <input type="number" class="form-control" id="fireExtinguishers" min="0"
+                                            required>
                                     </div>
                                     <div>
                                         <label class="block mb-2">Fire Alarm System Installed</label>
@@ -356,7 +344,8 @@
                                         <i class="fas fa-file-pdf text-4xl text-red-500 mb-2"></i>
                                         <div class="font-medium mb-2">Building Plan</div>
                                         <input type="file" class="hidden" id="buildingPlan" accept=".pdf">
-                                        <button class="btn btn-outline-primary" onclick="document.getElementById('buildingPlan').click()">
+                                        <button class="btn btn-outline-primary"
+                                            onclick="document.getElementById('buildingPlan').click()">
                                             Upload PDF
                                         </button>
                                     </div>
@@ -364,7 +353,8 @@
                                         <i class="fas fa-file-contract text-4xl text-blue-500 mb-2"></i>
                                         <div class="font-medium mb-2">Safety Certificate</div>
                                         <input type="file" class="hidden" id="safetyCertificate" accept=".pdf">
-                                        <button class="btn btn-outline-primary" onclick="document.getElementById('safetyCertificate').click()">
+                                        <button class="btn btn-outline-primary"
+                                            onclick="document.getElementById('safetyCertificate').click()">
                                             Upload PDF
                                         </button>
                                     </div>
@@ -372,7 +362,8 @@
                                         <i class="fas fa-file-invoice text-4xl text-green-500 mb-2"></i>
                                         <div class="font-medium mb-2">Insurance Document</div>
                                         <input type="file" class="hidden" id="insuranceDoc" accept=".pdf">
-                                        <button class="btn btn-outline-primary" onclick="document.getElementById('insuranceDoc').click()">
+                                        <button class="btn btn-outline-primary"
+                                            onclick="document.getElementById('insuranceDoc').click()">
                                             Upload PDF
                                         </button>
                                     </div>
@@ -387,7 +378,7 @@
                                 <h3 class="text-xl font-semibold mb-4">Review Your Application</h3>
                                 <div class="bg-gray-50 p-6 rounded-lg">
                                     <div id="review-content">
-                                        </div>
+                                    </div>
                                 </div>
                                 <div class="mt-6 flex justify-between">
                                     <button class="btn btn-secondary" onclick="previousStep()">Previous</button>
@@ -414,7 +405,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    </tbody>
+                                </tbody>
                             </table>
                         </div>
                     </div>
@@ -424,19 +415,24 @@
                             <table class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Inspection Date
                                         </th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Time
                                         </th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Location
                                         </th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Inspector
                                         </th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Status
                                         </th>
                                     </tr>
@@ -462,7 +458,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    </tbody>
+                                </tbody>
                             </table>
                         </div>
                     </div>
@@ -471,24 +467,29 @@
                 <section id="reports" class="section-content animated hidden">
                     <div class="bg-white p-6 rounded-lg shadow-lg">
                         <h2 class="text-2xl font-bold mb-6">Your NOC Reports</h2>
-                        
+
                         <div class="overflow-x-auto">
                             <table class="min-w-full bg-white">
                                 <thead>
                                     <tr class="bg-gray-100">
-                                        <th class="px-6 py-3 border-b-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                        <th
+                                            class="px-6 py-3 border-b-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                             Certificate No.
                                         </th>
-                                        <th class="px-6 py-3 border-b-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                        <th
+                                            class="px-6 py-3 border-b-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                             Business Name
                                         </th>
-                                        <th class="px-6 py-3 border-b-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                        <th
+                                            class="px-6 py-3 border-b-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                             Issue Date
                                         </th>
-                                        <th class="px-6 py-3 border-b-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                        <th
+                                            class="px-6 py-3 border-b-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                             Valid Until
                                         </th>
-                                        <th class="px-6 py-3 border-b-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                        <th
+                                            class="px-6 py-3 border-b-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                             Actions
                                         </th>
                                     </tr>
@@ -507,11 +508,11 @@
     <div class="dashboard-container">
         <div class="d-flex">
             <!-- Existing sidebar -->
-            
+
             <div class="main-content flex-1 p-6">
                 <section id="dashboard" class="section-content animated">
                     <!-- Existing welcome section -->
-                    
+
                     <!-- New Approval Reports Section -->
                     <div class="bg-white p-6 rounded-lg shadow-sm mb-8">
                         <h3 class="text-xl font-semibold mb-4">Recent Approvals</h3>
@@ -519,11 +520,21 @@
                             <table class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Report ID</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Business Name</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Approved Date</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valid Until</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                        <th
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Report ID</th>
+                                        <th
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Business Name</th>
+                                        <th
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Approved Date</th>
+                                        <th
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Valid Until</th>
+                                        <th
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody id="approvalReportsTable" class="bg-white divide-y divide-gray-200">
@@ -532,7 +543,7 @@
                             </table>
                         </div>
                     </div>
-    
+
                     <!-- Application Cards -->
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <div class="bg-white p-6 rounded-lg shadow-sm">
@@ -546,7 +557,7 @@
                                 <!-- Approved applications will be populated here -->
                             </div>
                         </div>
-    
+
                         <div class="bg-white p-6 rounded-lg shadow-sm">
                             <div class="flex items-center justify-between mb-4">
                                 <h4 class="text-lg font-semibold">Pending Renewals</h4>
@@ -558,7 +569,7 @@
                                 <!-- Pending renewals will be populated here -->
                             </div>
                         </div>
-    
+
                         <div class="bg-white p-6 rounded-lg shadow-sm">
                             <div class="flex items-center justify-between mb-4">
                                 <h4 class="text-lg font-semibold">Recent Activities</h4>
@@ -572,9 +583,10 @@
                         </div>
                     </div>
                 </section>
-    
+
                 <!-- Approval Report Modal -->
-                <div id="approvalReportModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center">
+                <div id="approvalReportModal"
+                    class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center">
                     <div class="bg-white rounded-lg p-8 max-w-3xl w-full max-h-90vh overflow-y-auto">
                         <div class="flex justify-between items-center mb-6">
                             <h3 class="text-2xl font-bold">NOC Approval Report</h3>
@@ -786,7 +798,7 @@
                 document.getElementById('userRole').textContent = formatRole(data.user.role);
                 document.getElementById('userEmail').textContent = data.user.email;
                 document.getElementById('userPhone').textContent = data.user.mobile || 'Not provided';
-                
+
                 // Update profile image if available
                 if (data.user.profile_image) {
                     document.getElementById('userProfileImage').src = `/static/profile_images/${data.user.profile_image}`;
@@ -796,12 +808,12 @@
                 if (data.user.role === 'admin') {
                     addAdminElements(data.user);
                 }
-                
+
                 // Update statistics
                 document.getElementById('pending-applications').textContent = data.stats.pending_applications;
                 document.getElementById('approved-applications').textContent = data.stats.approved_applications;
                 document.getElementById('upcoming-inspections').textContent = data.stats.upcoming_inspections;
-                
+
                 // Update progress bar
                 const total = data.stats.pending_applications + data.stats.approved_applications;
                 const progress = total > 0 ? (data.stats.approved_applications / total) * 100 : 0;
@@ -912,7 +924,7 @@
                 }
 
                 const data = await response.json();
-                
+
                 // Update UI with new values
                 document.getElementById('userName').textContent = `Welcome, ${data.name}`;
                 document.getElementById('userEmail').textContent = data.email;
@@ -932,12 +944,12 @@
 
         // Dashboard functionality
         document.addEventListener('DOMContentLoaded', () => {
-            showSection('dashboard'); 
+            showSection('dashboard');
         });
 
         async function submitNOCApplication(event) {
             event.preventDefault();
-            
+
             const form = document.getElementById('nocApplicationForm');
             const formData = new FormData(form);
 
@@ -954,16 +966,16 @@
                 }
 
                 const result = await response.json();
-                
+
                 // Show success message
                 showNotification('Application submitted successfully!', 'success');
-                
+
                 // Reset form
                 form.reset();
-                
+
                 // Refresh the applications list
                 loadApplications();
-                
+
             } catch (error) {
                 console.error('Error:', error);
                 showNotification(error.message, 'error');
@@ -1005,12 +1017,12 @@
             const originalText = downloadBtn.innerHTML;
             downloadBtn.disabled = true;
             downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Downloading...';
-            
+
             // Create a hidden iframe for download
             const iframe = document.createElement('iframe');
             iframe.style.display = 'none';
             document.body.appendChild(iframe);
-            
+
             // Set a timeout to detect if download fails
             const timeoutId = setTimeout(() => {
                 document.body.removeChild(iframe);
@@ -1018,11 +1030,11 @@
                 downloadBtn.innerHTML = originalText;
                 showNotification('Download failed. Please try again.', 'error');
             }, 30000); // 30 second timeout
-            
+
             // Handle iframe load event
-            iframe.onload = function() {
+            iframe.onload = function () {
                 clearTimeout(timeoutId);
-                
+
                 try {
                     // Check if the iframe contains an error response
                     const iframeContent = iframe.contentDocument || iframe.contentWindow.document;
@@ -1033,13 +1045,13 @@
                     // If we can't access iframe content, assume download started
                     showNotification('Download started!', 'success');
                 }
-                
+
                 // Cleanup
                 document.body.removeChild(iframe);
                 downloadBtn.disabled = false;
                 downloadBtn.innerHTML = originalText;
             };
-            
+
             // Start the download
             iframe.src = `/download-report/${reportId}`;
         }
@@ -1050,22 +1062,22 @@
                 fetch('/api/user-applications').then(res => res.json()),
                 fetch('/api/approval-reports').then(res => res.json())
             ])
-            .then(([applications, reports]) => {
-                updateDashboardStats(applications);
-                populateApprovalReports(reports);
-                populateApplicationLists(applications);
-            })
-            .catch(error => {
-                console.error('Error fetching dashboard data:', error);
-                showNotification('Error loading dashboard data', 'error');
-            });
+                .then(([applications, reports]) => {
+                    updateDashboardStats(applications);
+                    populateApprovalReports(reports);
+                    populateApplicationLists(applications);
+                })
+                .catch(error => {
+                    console.error('Error fetching dashboard data:', error);
+                    showNotification('Error loading dashboard data', 'error');
+                });
         }
 
         function updateDashboardStats(applications) {
             document.getElementById('totalApplications').textContent = applications.length;
-            document.getElementById('approvedApplications').textContent = 
+            document.getElementById('approvedApplications').textContent =
                 applications.filter(app => app.status === 'approved').length;
-            document.getElementById('pendingApplications').textContent = 
+            document.getElementById('pendingApplications').textContent =
                 applications.filter(app => app.status === 'pending').length;
         }
 
@@ -1103,7 +1115,7 @@
             // Populate approved applications
             const approvedList = document.getElementById('approvedApplicationsList');
             approvedList.innerHTML = '';
-            
+
             applications.filter(app => app.status === 'approved')
                 .slice(0, 5)
                 .forEach(app => {
@@ -1127,17 +1139,17 @@
             // Populate pending renewals
             const renewalsList = document.getElementById('pendingRenewalsList');
             renewalsList.innerHTML = '';
-            
+
             applications.filter(app => {
                 const validUntil = new Date(app.valid_until);
                 const now = new Date();
                 const daysUntilExpiry = (validUntil - now) / (1000 * 60 * 60 * 24);
                 return daysUntilExpiry <= 30 && daysUntilExpiry > 0;
             })
-            .forEach(app => {
-                const div = document.createElement('div');
-                div.className = 'p-4 bg-gray-50 rounded-lg';
-                div.innerHTML = `
+                .forEach(app => {
+                    const div = document.createElement('div');
+                    div.className = 'p-4 bg-gray-50 rounded-lg';
+                    div.innerHTML = `
                     <div class="flex justify-between items-center">
                         <div>
                             <h5 class="font-medium">${app.business_name}</h5>
@@ -1149,17 +1161,17 @@
                         </button>
                     </div>
                 `;
-                renewalsList.appendChild(div);
-            });
+                    renewalsList.appendChild(div);
+                });
         }
 
         async function viewReport(reportId) {
             try {
                 const response = await fetch(`/approval-report/${reportId}`);
                 const report = await response.json();
-                
+
                 if (!response.ok) throw new Error(report.error);
-                
+
                 displayReportModal(report);
             } catch (error) {
                 console.error('Error fetching report:', error);
@@ -1170,7 +1182,7 @@
         function displayReportModal(report) {
             const modal = document.getElementById('approvalReportModal');
             const content = document.getElementById('reportContent');
-            
+
             content.innerHTML = `
                 <div class="space-y-6">
                     <div class="border-b pb-4">
@@ -1214,13 +1226,13 @@
                     <div>
                         <h4 class="text-xl font-semibold mb-2">Approval Conditions</h4>
                         <ul class="list-disc pl-5 space-y-2">
-                            ${report.approval_conditions.map(condition => 
-                                `<li>${condition}</li>`).join('')}
+                            ${report.approval_conditions.map(condition =>
+                `<li>${condition}</li>`).join('')}
                         </ul>
                     </div>
                 </div>
             `;
-            
+
             modal.classList.remove('hidden');
             modal.classList.add('flex');
         }
@@ -1237,12 +1249,12 @@
             const originalText = downloadBtn.innerHTML;
             downloadBtn.disabled = true;
             downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Downloading...';
-            
+
             // Create a hidden iframe for download
             const iframe = document.createElement('iframe');
             iframe.style.display = 'none';
             document.body.appendChild(iframe);
-            
+
             // Set a timeout to detect if download fails
             const timeoutId = setTimeout(() => {
                 document.body.removeChild(iframe);
@@ -1250,11 +1262,11 @@
                 downloadBtn.innerHTML = originalText;
                 showNotification('Download failed. Please try again.', 'error');
             }, 30000); // 30 second timeout
-            
+
             // Handle iframe load event
-            iframe.onload = function() {
+            iframe.onload = function () {
                 clearTimeout(timeoutId);
-                
+
                 try {
                     // Check if the iframe contains an error response
                     const iframeContent = iframe.contentDocument || iframe.contentWindow.document;
@@ -1265,13 +1277,13 @@
                     // If we can't access iframe content, assume download started
                     showNotification('Download started!', 'success');
                 }
-                
+
                 // Cleanup
                 document.body.removeChild(iframe);
                 downloadBtn.disabled = false;
                 downloadBtn.innerHTML = originalText;
             };
-            
+
             // Start the download
             iframe.src = `/download-report/${reportId}`;
         }
@@ -1284,12 +1296,12 @@
         // Socket connection for real-time updates
         function initializeSocketConnection() {
             const socket = io();
-            
+
             socket.on('application_approved', (data) => {
                 showNotification('Application Approved', 'success');
                 fetchDashboardData();
             });
-            
+
             socket.on('application_updated', (data) => {
                 fetchDashboardData();
             });
@@ -1299,13 +1311,13 @@
                     // Add the new report to the approvalReportsTable
                     addNewReport(data.report);
                 }
-                
+
                 // Update dashboard stats
                 fetchDashboardData();
-                
+
                 // Show notification
                 showNotification(
-                    `Application ${data.status.toUpperCase()}`, 
+                    `Application ${data.status.toUpperCase()}`,
                     data.status === 'approved' ? 'success' : 'warning'
                 );
             });
@@ -1341,12 +1353,12 @@
             const notification = document.createElement('div');
             notification.className = `notification ${type}`;
             notification.textContent = message;
-            
+
             // Style based on type
-            const backgroundColor = type === 'success' ? '#4caf50' : 
-                                  type === 'error' ? '#f44336' : 
-                                  '#2196f3';
-            
+            const backgroundColor = type === 'success' ? '#4caf50' :
+                type === 'error' ? '#f44336' :
+                    '#2196f3';
+
             notification.style.cssText = `
                 position: fixed;
                 top: 20px;
@@ -1358,9 +1370,9 @@
                 box-shadow: 0 2px 5px rgba(0,0,0,0.2);
                 z-index: 1000;
             `;
-            
+
             document.body.appendChild(notification);
-            
+
             // Remove notification after 5 seconds
             setTimeout(() => {
                 notification.remove();
@@ -1371,7 +1383,7 @@
             try {
                 const response = await fetch('/api/approval-reports');
                 const data = await response.json();
-                
+
                 const tableBody = document.getElementById('reports-table-body');
                 tableBody.innerHTML = data.reports.map(report => `
                     <tr class="hover:bg-gray-50">
@@ -1407,7 +1419,7 @@
 
         // Initial Setup
         document.addEventListener('DOMContentLoaded', () => {
-            showSection('dashboard'); 
+            showSection('dashboard');
         });
 
         async function loadUpcomingInspections() {
@@ -1453,4 +1465,5 @@
         });
     </script>
 </body>
+
 </html>

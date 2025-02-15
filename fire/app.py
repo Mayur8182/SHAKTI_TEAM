@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_from_directory, Response, send_file
 from flask_mail import Mail, Message
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SelectField, SubmitField
+from wtforms import StringField, PasswordField, SelectField, SubmitField, FileField
 from wtforms.validators import InputRequired, EqualTo, Email
 from flask_wtf.csrf import CSRFProtect
 import bcrypt
@@ -35,6 +35,7 @@ import csv
 from io import TextIOWrapper
 from flask_cors import CORS
 import pdfkit
+from aadhaar_utils import extract_aadhaar, find_user_by_aadhaar
 
 # Initialize Flask App
 app = Flask(__name__)
@@ -46,16 +47,31 @@ app.config['UPLOAD_FOLDER'] = 'uploads'
 
 # CSRF protection
 csrf = CSRFProtect(app)
+app.config.update(
+    MAIL_SERVER='smtp.gmail.com',
+    MAIL_PORT=587,
+    MAIL_USE_TLS=True,
+    MAIL_USE_SSL=False,
+    MAIL_USERNAME='mkbharvad534@gmail.com',  # Your Gmail
+    MAIL_PASSWORD='dwtp fmiq miyl ccvq',     # Your app password
+    MAIL_DEFAULT_SENDER='mkbharvad534@gmail.com'
+)
 
-# Email configuration
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 587
-app.config['MAIL_USERNAME'] = 'mkbharvad534@gmail.com'  # Your Gmail address
-app.config['MAIL_PASSWORD'] = 'dwtp fmiq miyl ccvq'  # Your app password
-app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USE_SSL'] = False
-
+# Initialize Flask-Mail
 mail = Mail(app)
+
+def send_email(subject, recipient, body):
+    try:
+        msg = Message(subject, recipients=[recipient])
+        msg.body = body
+        mail.send(msg)
+        log_activity('Email', f"Email sent successfully to {recipient}")
+        return True
+    except Exception as e:
+        error_msg = f"Error sending email to {recipient}: {str(e)}"
+        log_activity('Email Error', error_msg)
+        print(error_msg)  # For immediate debugging
+        return False
 
 # MongoDB connection
 client = MongoClient('mongodb://localhost:27017/')
@@ -119,16 +135,6 @@ def detect_document_content(image_path):
         return extracted_text, errors
     except Exception as e:
         return "", [str(e)]
-
-def send_email(subject, recipient, body):
-    try:
-        msg = Message(subject, sender=app.config['MAIL_USERNAME'], recipients=[recipient])
-        msg.body = body
-        mail.send(msg)
-        return True
-    except Exception as e:
-        print(f"Error sending email: {e}")
-        return False
 
 def log_activity(activity_type, description, username=None):
     try:
@@ -216,8 +222,7 @@ Application Details:
 - Approved By: {session.get('username')}
 - Approval Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 - Valid Until: {(datetime.now() + timedelta(days=365)).strftime('%Y-%m-%d')}
-
-Business Information:
+- Business Information:
 - Address: {application.get('business_address')}
 - Contact Number: {application.get('contact_number')}
 
@@ -312,22 +317,29 @@ AEK NOC System Team
         )
         msg.body = body
         mail.send(msg)
-
-        # Log the email sending
-        log_activity(
-            'Email Sent',
-            f"Rejection email sent to {application.get('email')} for application {str(application['_id'])}"
-        )
-        return True
-
+        email_sent = True
     except Exception as e:
         print(f"Error sending rejection email: {str(e)}")
-        log_activity(
-            'Email Error',
-            f"Failed to send rejection email: {str(e)}"
-        )
-        return False
+        email_sent = False
 
+    # Log activity
+    log_activity(
+        'Application Rejection',
+        f"Application {application['_id']} rejected and {'email sent' if email_sent else 'email failed'}"
+    )
+    
+    # Emit socket event
+    socketio.emit('application_status_changed', {
+        'application_id': str(application['_id']),
+        'status': 'rejected',
+        'message': 'Application has been rejected!'
+    })
+    
+    return jsonify({
+        'success': True, 
+        'message': 'Application rejected' + (' and email sent' if email_sent else ' but email failed to send')
+    })
+    
 def send_inspection_notifications(inspection_data, business_data, inspector_data):
     try:
         # Send notification to user/business owner
@@ -415,8 +427,9 @@ class RegistrationForm(FlaskForm):
     confirm_password = PasswordField('Confirm Password', 
                                    validators=[InputRequired(), EqualTo('password')])
     role = SelectField('Register As', 
-                      choices=[('admin', 'Admin'), ('manager', 'Manager'), 
-                              ('inspector', 'Inspector'), ('expert', 'Expert')])
+                      choices=[('admin', 'Admin'), ('user', 'User'), 
+                              ('inspector', 'Inspector')])
+    aadhaar_photo = FileField('Aadhaar Card Photo', validators=[InputRequired()])
     submit = SubmitField('Register')
 
 # Routes
@@ -455,26 +468,51 @@ def register():
         if users.find_one({'username': form.username.data}):
             flash('Username already exists!', 'danger')
         else:
-            hashed_password = bcrypt.hashpw(
-                form.password.data.encode('utf-8'), 
-                bcrypt.gensalt()
-            )
-            user_data = {
-                'username': form.username.data,
-                'name': form.name.data,
-                'email': form.email.data,
-                'password': hashed_password,
-                'role': form.role.data,
-                'created_at': datetime.now()
-            }
-            users.insert_one(user_data)
-            
-            # Send registration email
-            send_registration_email(user_data)
-            
-            log_activity('Registration', f"New user registered: {form.username.data}")
-            flash('Registration successful! Please check your email.', 'success')
-            return redirect(url_for('login'))
+            # Handle Aadhaar photo upload
+            aadhaar_photo = form.aadhaar_photo.data
+            if aadhaar_photo:
+                filename = secure_filename(f"aadhaar_{form.username.data}_{int(time.time())}.jpg")
+                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                aadhaar_photo.save(filepath)
+                
+                # Extract Aadhaar number and verify
+                extracted_aadhaar = extract_aadhaar(filepath)
+                if extracted_aadhaar:
+                    # Check if Aadhaar exists in dataset
+                    name, phone = find_user_by_aadhaar(extracted_aadhaar)
+                    if name:
+                        # Create user without name verification
+                        hashed_password = bcrypt.hashpw(
+                            form.password.data.encode('utf-8'), 
+                            bcrypt.gensalt()
+                        )
+                        user_data = {
+                            'username': form.username.data,
+                            'name': form.name.data,  # Use provided name
+                            'email': form.email.data,
+                            'password': hashed_password,
+                            'role': form.role.data,
+                            'aadhaar_number': extracted_aadhaar,
+                            'aadhaar_photo': filename,
+                            'phone': phone,
+                            'created_at': datetime.now()
+                        }
+                        users.insert_one(user_data)
+                        
+                        # Send registration email
+                        send_registration_email(user_data)
+                        
+                        log_activity('Registration', f"New user registered: {form.username.data}")
+                        flash('Registration successful! Please check your email.', 'success')
+                        return redirect(url_for('login'))
+                    else:
+                        flash('Aadhaar number not found in our records!', 'danger')
+                        os.remove(filepath)  # Remove uploaded file
+                else:
+                    flash('Could not extract Aadhaar number from the uploaded image!', 'danger')
+                    os.remove(filepath)  # Remove uploaded file
+            else:
+                flash('Please upload your Aadhaar card photo!', 'danger')
     
     return render_template('register.html', form=form)
 
@@ -859,6 +897,10 @@ Application Details:
 - Submission Date: {application.get('timestamp', datetime.now()).strftime('%Y-%m-%d %H:%M:%S')}
 - Rejected By: {session.get('username')}
 - Rejection Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+Business Information:
+- Address: {application.get('business_address')}
+- Contact Number: {application.get('contact_number')}
 
 Reason for Rejection:
 {rejection_reason}
@@ -1879,82 +1921,51 @@ def view_profile(username):
     return render_template('profile.html', user=user, role_data=role_data)
 
 def get_role_specific_data(user):
-    role = user['role']
-    username = user['username']
-    
-    if role == 'business_owner':
-        return {
-            'total_applications': applications.count_documents({'username': username}),
-            'approved_applications': applications.count_documents({'username': username, 'status': 'approved'}),
-            'pending_inspections': applications.count_documents({
-                'username': username,
-                'status': 'pending',
-                'inspection_scheduled': True
-            }),
-            'business_details': {
-                'company_name': user.get('company_name'),
-                'business_type': user.get('business_type'),
-                'address': user.get('address')
-            },
-            'recent_activities': list(activities.find(
-                {'username': username}
-            ).sort('timestamp', -1).limit(5))
-        }
-    
-    elif role == 'manager':
-        return {
-            'managed_applications': applications.count_documents({'assigned_manager': username}),
-            'team_size': users.count_documents({'reporting_manager': username}),
-            'pending_approvals': applications.count_documents({
-                'assigned_manager': username,
-                'status': 'pending'
-            }),
-            'department': user.get('department'),
-            'team_members': list(users.find(
-                {'reporting_manager': username},
-                {'username': 1, 'name': 1, 'designation': 1}
-            ))
-        }
-    
-    elif role == 'employee':
-        return {
-            'assigned_tasks': applications.count_documents({'assigned_inspector': username}),
-            'completed_inspections': applications.count_documents({
-                'assigned_inspector': username,
-                'inspection_status': 'completed'
-            }),
-            'department': user.get('department'),
-            'reporting_manager': users.find_one(
-                {'username': user.get('reporting_manager')},
-                {'name': 1, 'email': 1}
-            )
-        }
-    
-    elif role == 'expert':
-        return {
-            'expertise': user.get('expertise', ''),
-            'experience': user.get('experience', ''),
-            'certifications': user.get('certifications', ''),
-            'recent_activities': list(activities.find(
-                {'username': username}
-            ).sort('timestamp', -1).limit(5))
-        }
-    
-    elif role == 'admin':
-        return {
-            'total_users': users.count_documents({}),
-            'total_applications': applications.count_documents({}),
-            'recent_registrations': list(users.find(
-                {}
-            ).sort('created_at', -1).limit(5)),
-            'system_stats': {
-                'pending_applications': applications.count_documents({'status': 'pending'}),
-                'approved_applications': applications.count_documents({'status': 'approved'}),
-                'rejected_applications': applications.count_documents({'status': 'rejected'})
+    try:
+        role = user.get('role', '')
+        username = user.get('username', '')
+        
+        if role == 'user':
+            return {
+                'total_applications': applications.count_documents({'username': username}),
+                'approved_applications': applications.count_documents({'username': username, 'status': 'approved'}),
+                'pending_applications': applications.count_documents({'username': username, 'status': 'pending'}),
+                'recent_applications': list(applications.find(
+                    {'username': username}
+                ).sort('timestamp', -1).limit(5)),
+                'recent_activities': list(activities.find(
+                    {'username': username}
+                ).sort('timestamp', -1).limit(5))
             }
-        }
-    
-    return {}
+        
+        elif role == 'admin':
+            return {
+                'total_users': users.count_documents({}),
+                'total_applications': applications.count_documents({}),
+                'system_stats': {
+                    'pending_applications': applications.count_documents({'status': 'pending'}),
+                    'approved_applications': applications.count_documents({'status': 'approved'}),
+                    'rejected_applications': applications.count_documents({'status': 'rejected'})
+                }
+            }
+        
+        elif role == 'inspector':
+            return {
+                'assigned_inspections': inspections.count_documents({'inspector_id': username}),
+                'completed_inspections': inspections.count_documents({
+                    'inspector_id': username,
+                    'status': 'completed'
+                }),
+                'recent_inspections': list(inspections.find(
+                    {'inspector_id': username}
+                ).sort('date', -1).limit(5))
+            }
+            
+        return {}
+        
+    except Exception as e:
+        print(f"[ERROR] Error getting role data: {str(e)}")
+        return {}
 
 @app.route('/dashboard')
 def dashboard():
@@ -1967,14 +1978,10 @@ def dashboard():
     
     if role == 'admin':
         return redirect(url_for('admin_dashboard'))
-    elif role == 'business_owner':
-        return redirect(url_for('business_dashboard'))
-    elif role == 'manager':
-        return redirect(url_for('manager_dashboard'))
-    elif role == 'employee':
-        return redirect(url_for('employee_dashboard'))
-    elif role == 'expert':
-        return redirect(url_for('expert_dashboard'))
+    elif role == 'user':
+        return redirect(url_for('user_dashboard'))
+    elif role == 'inspector':
+        return redirect(url_for('inspector_dashboard'))
     
     flash('Invalid role!', 'danger')
     return redirect(url_for('login'))
@@ -1999,30 +2006,24 @@ def update_profile():
         }
         
         # Role-specific profile updates
-        if role == 'business_owner':
+        if role == 'user':
             update_data.update({
                 'company_name': data.get('company_name'),
                 'business_type': data.get('business_type'),
                 'gst_number': data.get('gst_number'),
                 'business_address': data.get('business_address')
             })
-        elif role == 'manager':
+        elif role == 'admin':
             update_data.update({
                 'department': data.get('department'),
                 'designation': data.get('designation'),
                 'team_size': data.get('team_size')
             })
-        elif role == 'employee':
+        elif role == 'inspector':
             update_data.update({
                 'department': data.get('department'),
                 'designation': data.get('designation'),
                 'skills': data.get('skills', '').split(',')
-            })
-        elif role == 'expert':
-            update_data.update({
-                'expertise': data.get('expertise'),
-                'experience': data.get('experience'),
-                'certifications': data.get('certifications')
             })
         
         # Handle profile image upload
@@ -2214,7 +2215,7 @@ def view_user(user_id):
         # Add created_at if it doesn't exist
         if 'created_at' not in user:
             user['created_at'] = user.get('timestamp', datetime.now())
-            
+        
         # Get user's activities
         user_activities = list(activities.find(
             {'username': user['username']},
@@ -2457,42 +2458,15 @@ def export_page_analytics():
     writer.writerow(['Pending Applications', pending_applications])
     writer.writerow(['Rejected Applications', rejected_applications])
     
-    # Create PDF report
-    buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=letter)
-    styles = getSampleStyleSheet()
-    title_style = styles['Title']
+    # Create the response
+    output = make_response(output.getvalue())
+    output.headers["Content-Disposition"] = "attachment; filename=page_analytics_export.csv"
+    output.headers["Content-type"] = "text/csv"
     
-    story = [
-        Paragraph("Page Analytics Report", title_style),
-        Spacer(1, 12),
-        Paragraph(f"Total Applications: {total_applications}", styles['Normal']),
-        Paragraph(f"Approved Applications: {approved_applications}", styles['Normal']),
-        Paragraph(f"Pending Applications: {pending_applications}", styles['Normal']),
-        Paragraph(f"Rejected Applications: {rejected_applications}", styles['Normal'])
-    ]
+    # Log the export
+    log_activity('Page Analytics Export', f"Page analytics exported by {session['username']}")
     
-    # Export options
-    export_type = request.args.get('format', 'csv')
-    
-    if export_type == 'pdf':
-        doc.build(story)
-        buffer.seek(0)
-        return send_file(
-            buffer, 
-            mimetype='application/pdf', 
-            as_attachment=True, 
-            download_name='page_analytics_report.pdf'
-        )
-    else:
-        output.seek(0)
-        return send_file(
-            output, 
-            mimetype='text/csv', 
-            as_attachment=True, 
-            download_name='page_analytics_report.csv'
-        )
-
+    return output
 
 @app.route('/export_performance_metrics/<format>')
 def export_performance_metrics(format):
@@ -2558,15 +2532,33 @@ def export_performance_metrics(format):
 
         elif format == 'pdf':
             buffer = BytesIO()
-            doc = SimpleDocTemplate(buffer, pagesize=letter)
-            elements = []
-            styles = getSampleStyleSheet()
+            doc = SimpleDocTemplate(
+                buffer,
+                pagesize=letter,
+                rightMargin=72,
+                leftMargin=72,
+                topMargin=72,
+                bottomMargin=72
+            )
 
-            # Title
-            elements.append(Paragraph("Performance Metrics Report", styles['Title']))
+            # Define styles
+            styles = getSampleStyleSheet()
+            styles.add(ParagraphStyle(
+                name='CustomTitle',
+                fontName='Helvetica-Bold',
+                fontSize=20,
+                spaceAfter=30,
+                alignment=1
+            ))
+
+            # Create document elements
+            elements = []
+
+            # Add title
+            elements.append(Paragraph("Performance Metrics Report", styles['CustomTitle']))
             elements.append(Spacer(1, 20))
 
-            # Processing Times Table
+            # Add processing times table
             elements.append(Paragraph("Processing Times by Status", styles['Heading1']))
             elements.append(Spacer(1, 12))
             
@@ -2583,12 +2575,14 @@ def export_performance_metrics(format):
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
                 ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
                 ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, -1), 10),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
                 ('GRID', (0, 0), (-1, -1), 1, colors.black)
             ]))
             elements.append(pt_table)
             elements.append(Spacer(1, 20))
 
-            # User Performance Table
+            # Add user performance table
             elements.append(Paragraph("User Performance Metrics", styles['Heading1']))
             elements.append(Spacer(1, 12))
             
@@ -2902,7 +2896,7 @@ Business Details:
 
 Inspection Details:
 - Date: {inspection['date']}
-- Time: {inspection['time']}
+- Time: {datetime.now().strftime('%H:%M')}
 - Inspector: {inspector['name']}
 
 The inspection report is attached to this email.
@@ -3140,8 +3134,8 @@ def generate_inspection_report(inspection_id):
                         <table class="table">
                             <tr><th>Business Name</th><td>{business['business_name']}</td></tr>
                             <tr><th>Address</th><td>{business['business_address']}</td></tr>
-                            <tr><th>Contact Person</th><td>{business['contact_person']}</td></tr>
-                            <tr><th>Contact Email</th><td>{business['contact_email']}</td></tr>
+                            <tr><th>Contact Person</th><td>{business.get('contact_person', 'N/A')}</td></tr>
+                            <tr><th>Contact Email</th><td>{business.get('email', 'N/A')}</td></tr>
                         </table>
                     </div>
                     
@@ -3275,10 +3269,10 @@ Inspection Schedule:
 - Time: {inspection_data['time']}
 - Location: {inspection_data.get('location', 'As per business address')}
 
-Important: Click the following link when you arrive at the location to start the inspection:
+Click the following link to activate and start the inspection:
 {activation_link}
 
-Note: Please only activate the inspection when you are at the business location.
+Please note: Activate the inspection only when you arrive at the location.
 
 Best regards,
 Fire Safety Department
@@ -3447,8 +3441,8 @@ def get_inspection_reports():
         print(f"Error in get_inspection_reports: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/inspection-reports')
-def get_detailed_inspection_reports():    # Changed function name here
+@app.route('/api/detailed-inspection-reports')
+def get_detailed_inspection_reports():
     if session.get('role') != 'admin':
         return jsonify({'error': 'Unauthorized'}), 401
     
@@ -3468,8 +3462,8 @@ def get_detailed_inspection_reports():    # Changed function name here
             formatted_reports.append({
                 '_id': str(report['_id']),
                 'date': report.get('date'),
-                'business_name': business.get('business_name') if business else 'N/A',
-                'inspector_name': inspector.get('name') if inspector else 'N/A',
+                'business_name': business.get('business_name', 'N/A'),
+                'inspector_name': inspector.get('name', 'N/A'),
                 'status': report.get('status'),
                 'completion_date': report.get('completion_date'),
                 'report_url': f"/download-inspection-report/{str(report['_id'])}",
@@ -3507,8 +3501,8 @@ def inspection_reports():
             formatted_report = {
                 '_id': str(report['_id']),
                 'date': report.get('date'),
-                'business_name': business.get('business_name') if business else 'N/A',
-                'inspector_name': inspector.get('name') if inspector else 'N/A',
+                'business_name': business.get('business_name', 'N/A'),
+                'inspector_name': inspector.get('name', 'N/A'),
                 'status': report.get('status'),
                 'completion_date': report.get('completion_date'),
                 'report_url': f"/download-inspection-report/{str(report['_id'])}",
@@ -3600,5 +3594,113 @@ if __name__ == '__main__':
         os.makedirs(app.config['UPLOAD_FOLDER'])
     socketio.run(app, debug=True)
 
+@app.route('/api/update-profile', methods=['POST'])
+def api_update_profile():
+    try:
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+        
+        data = request.get_json()
+        user_id = session['user_id']
+        
+        # Validate required fields
+        required_fields = ['name', 'email', 'phone']
+        if not all(field in data for field in required_fields):
+            return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+            
+        # Update user profile
+        update_result = users.update_one(
+            {'_id': ObjectId(user_id)},
+            {'$set': {
+                'name': data['name'],
+                'email': data['email'],
+                'phone': data['phone'],
+                'updated_at': datetime.now()
+            }}
+        )
+        
+        if update_result.modified_count > 0:
+            # Log the activity
+            log_activity('profile_update', f'User {session.get("username")} updated their profile')
+            return jsonify({'success': True, 'message': 'Profile updated successfully'})
+        else:
+            return jsonify({'success': False, 'error': 'No changes made to profile'}), 400
+            
+    except Exception as e:
+        print(f"Error updating profile: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/update-profile-image', methods=['POST'])
+def api_update_profile_image():
+    try:
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+            
+        if 'image' not in request.files:
+            return jsonify({'success': False, 'error': 'No image file provided'}), 400
+            
+        file = request.files['image']
+        
+        if file.filename == '':
+            return jsonify({'success': False, 'error': 'No selected file'}), 400
+            
+        if not allowed_file(file.filename):
+            return jsonify({'success': False, 'error': 'Invalid file type'}), 400
+        
+        # Generate secure filename
+        filename = secure_filename(f"{session['user_id']}_{int(time.time())}{os.path.splitext(file.filename)[1]}")
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        
+        # Save the file
+        file.save(filepath)
+        
+        # Update user profile with new image
+        users.update_one(
+            {'_id': ObjectId(session['user_id'])},
+            {'$set': {
+                'profile_image': filename,
+                'updated_at': datetime.now()
+            }}
+        )
+        
+        return jsonify({
+            'success': True,
+            'message': 'Profile image updated successfully',
+            'image_url': url_for('serve_profile_image', filename=filename)
+        })
+        
+    except Exception as e:
+        print(f"Error updating profile image: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/reports/<report_id>', methods=['GET'])
+def get_report(report_id):
+    try:
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+        
+        # Find the report
+        report = reports.find_one({'_id': ObjectId(report_id)})
+        if not report:
+            return jsonify({'success': False, 'error': 'Report not found'}), 404
+            
+        # Check if user has access to this report
+        user_id = session['user_id']
+        user_role = session.get('role')
+        
+        if user_role not in ['admin', 'inspector'] and str(report.get('user_id')) != str(user_id):
+            return jsonify({'success': False, 'error': 'Access denied'}), 403
+            
+        # Convert ObjectId to string for JSON serialization
+        report['_id'] = str(report['_id'])
+        if 'user_id' in report:
+            report['user_id'] = str(report['user_id'])
+            
+        return jsonify({
+            'success': True,
+            'report': report
+        })
+        
+    except Exception as e:
+        print(f"Error fetching report: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
