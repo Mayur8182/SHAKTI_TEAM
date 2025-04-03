@@ -40,12 +40,19 @@ import string
 import random
 
 # Initialize Flask App
-app = Flask(__name__)
+app = Flask(__name__, 
+    template_folder='templates',
+    static_folder='static'
+)
 CORS(app)  # Enable CORS for all routes
 socketio = SocketIO(app, cors_allowed_origins="*")
 app.secret_key = 'your_secret_key'  # Change this to a secure secret key
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
 app.config['UPLOAD_FOLDER'] = 'uploads'
+
+# Add template directory config
+app.template_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
+app.static_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
 
 # CSRF protection
 csrf = CSRFProtect(app)
