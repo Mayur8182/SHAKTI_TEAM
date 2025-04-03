@@ -36,6 +36,8 @@ from io import TextIOWrapper
 from flask_cors import CORS
 import pdfkit
 from aadhaar_utils import extract_aadhaar, find_user_by_aadhaar
+import string
+import random
 
 # Initialize Flask App
 app = Flask(__name__)
@@ -81,6 +83,7 @@ applications = db['applications']
 contacts = db['contacts']
 activities = db['activities']  # New collection for activity logging
 reports = db['reports']
+licenses = db['licenses']  # New collection for licenses
 
 inspections = db['inspections']
 notifications = db['notifications']
@@ -804,7 +807,8 @@ Application Details:
 - Valid Until: {(datetime.now() + timedelta(days=365)).strftime('%Y-%m-%d')}
 
 Please find your NOC certificate attached to this email.
-You can also download it from your dashboard.
+You can also view and download your certificate by logging into your dashboard:
+{url_for('view_application', application_id=str(application['_id']), _external=True)}
 
 Best regards,
 Fire Safety Department
@@ -2470,7 +2474,7 @@ def export_page_analytics():
 
 @app.route('/export_performance_metrics/<format>')
 def export_performance_metrics(format):
-    if 'username' not in session or session.get('role') != 'admin':
+    if session.get('role') != 'admin':
         flash('Access denied!', 'danger')
         return redirect(url_for('login'))
 
@@ -2856,36 +2860,34 @@ def complete_inspection():
         business = applications.find_one({'_id': ObjectId(inspection['business_id'])})
         inspector = users.find_one({'_id': ObjectId(inspection['inspector_id'])})
 
-        # Update inspection status
-        inspections.update_one(
-            {'_id': ObjectId(inspection_id)},
-            {
-                '$set': {
-                    'status': 'completed',
-                    'completion_date': datetime.now(),
-                    'report_data': report_data,
-                    'completed_by': session.get('username'),
-                    'report_generated': True
-                }
-            }
-        )
+        # Generate PDF report first
+        try:
+            report_path = generate_detailed_inspection_report(inspection, business, inspector, report_data)
+            
+            # Update inspection status only if report generation is successful
+            if report_path:
+                report_url = f"/download-inspection-report/{inspection_id}"
+                
+                inspections.update_one(
+                    {'_id': ObjectId(inspection_id)},
+                    {
+                        '$set': {
+                            'status': 'completed',
+                            'completion_date': datetime.now(),
+                            'report_data': report_data,
+                            'completed_by': session.get('username'),
+                            'report_generated': True,
+                            'report_url': report_url,
+                            'report_path': report_path
+                        }
+                    }
+                )
 
-        # Generate PDF report
-        report_path = generate_detailed_inspection_report(inspection, business, inspector, report_data)
-        
-        if report_path:
-            # Store report URL
-            report_url = f"/download-inspection-report/{inspection_id}"
-            inspections.update_one(
-                {'_id': ObjectId(inspection_id)},
-                {'$set': {'report_url': report_url}}
-            )
-
-            # Send email to business owner with report
-            try:
-                with open(report_path, 'rb') as report_file:
-                    business_subject = "Fire Safety Inspection Report"
-                    business_body = f"""
+                # Send email to business owner with report
+                try:
+                    with open(report_path, 'rb') as report_file:
+                        business_subject = "Fire Safety Inspection Report"
+                        business_body = f"""
 Dear {business.get('contact_person', 'Business Owner')},
 
 The fire safety inspection for your business has been completed.
@@ -2899,37 +2901,33 @@ Inspection Details:
 - Time: {datetime.now().strftime('%H:%M')}
 - Inspector: {inspector['name']}
 
-The inspection report is attached to this email.
+You can view and download the inspection report from your dashboard.
 
 Best regards,
 Fire Safety Department
 """
-                    msg = Message(
-                        business_subject,
-                        sender=app.config['MAIL_USERNAME'],
-                        recipients=[business['email']]
-                    )
-                    msg.body = business_body
-                    msg.attach(
-                        f"inspection_report_{inspection_id}.pdf",
-                        'application/pdf',
-                        report_file.read()
-                    )
-                    mail.send(msg)
+                        send_email_with_attachment(
+                            business_subject,
+                            business['email'],
+                            business_body,
+                            report_file,
+                            f"inspection_report_{inspection_id}.pdf"
+                        )
 
-            except Exception as e:
-                print(f"Error sending email: {str(e)}")
+                except Exception as e:
+                    print(f"Error sending email: {str(e)}")
 
-            return jsonify({
-                'success': True,
-                'message': 'Inspection completed and report sent successfully',
-                'report_url': report_url
-            })
+                return jsonify({
+                    'success': True,
+                    'message': 'Inspection completed and report sent successfully',
+                    'report_url': report_url
+                })
+            else:
+                return jsonify({'error': 'Failed to generate report'}), 500
 
-        else:
-            return jsonify({
-                'error': 'Failed to generate report'
-            }), 500
+        except Exception as e:
+            print(f"Error generating report: {str(e)}")
+            return jsonify({'error': 'Failed to generate inspection report'}), 500
 
     except Exception as e:
         print(f"Error completing inspection: {str(e)}")
@@ -3087,23 +3085,22 @@ def send_email_with_attachment(subject, recipient, body, attachment, filename):
 def download_inspection_report(inspection_id):
     try:
         inspection = inspections.find_one({'_id': ObjectId(inspection_id)})
-        if not inspection:
-            return jsonify({'error': 'Inspection not found'}), 404
-            
-        report_path = f"static/reports/inspection_{inspection_id}.pdf"
+        if not inspection or 'report_path' not in inspection:
+            return jsonify({'error': 'Report not found'}), 404
+
+        report_path = inspection['report_path']
         if not os.path.exists(report_path):
-            # Generate report if it doesn't exist
-            report_path = generate_inspection_report(inspection_id)
-            
+            return jsonify({'error': 'Report file not found'}), 404
+
         return send_file(
             report_path,
             as_attachment=True,
             download_name=f"inspection_report_{inspection_id}.pdf"
         )
-        
+
     except Exception as e:
         print(f"Error downloading report: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Failed to download report'}), 500
 
 def generate_inspection_report(inspection_id):
     try:
@@ -3190,16 +3187,17 @@ def send_inspection_email(inspector_email, inspection, business, report_path):
         msg.body = f"""
             Dear {inspection['inspector_name']},
 
-            You have been assigned to conduct a fire safety inspection for:
+            You have been assigned a new fire safety inspection:
 
             Business: {business['business_name']}
             Address: {business['business_address']}
             Date: {inspection['date']}
             Time: {inspection['time']}
+            Location: {inspection.get('location', 'As per business address')}
 
-            Contact Person: {business['contact_person']}
-            Contact Email: {business['contact_email']}
-            Contact Phone: {business['contact_phone']}
+            Contact Person: {business.get('contact_person', 'N/A')}
+            Contact Email: {business.get('email', 'N/A')}
+            Contact Phone: {business.get('contact_number', 'N/A')}
 
             Please review the attached inspection report and complete the inspection as scheduled.
 
@@ -3517,190 +3515,589 @@ def inspection_reports():
         flash('Error loading inspection reports', 'danger')
         return redirect(url_for('admin_dashboard'))
 
-@app.route('/activate_inspection/<inspection_id>/<token>')
-def activate_inspection(inspection_id, token):
+@app.route('/view_license/<license_id>')
+def view_license(license_id):
+    if 'username' not in session:
+        flash('Please log in first!', 'danger')
+        return redirect(url_for('login'))
+    
     try:
-        # Find inspection with matching ID and token
-        inspection = inspections.find_one({
-            '_id': ObjectId(inspection_id),
-            'activation_token': token,
-            'activated': False
-        })
+        license = licenses.find_one({'_id': ObjectId(license_id)})
+        if not license:
+            flash('License not found!', 'danger')
+            return redirect(url_for('manage_licenses'))
+        
+        # Add created_at if it doesn't exist
+        if 'created_at' not in license:
+            license['created_at'] = license.get('issue_date', datetime.now())
+        
+        # Convert ObjectId to string
+        license['_id'] = str(license['_id'])
+        
+        return render_template('view_license.html', license=license)
+        
+    except Exception as e:
+        print(f"Error in view_license: {str(e)}")
+        flash('Error loading license!', 'danger')
+        return redirect(url_for('manage_licenses'))
 
-        if not inspection:
-            flash('Invalid or expired activation link', 'danger')
-            return redirect(url_for('login'))
+@app.route('/manage_licenses')
+def manage_licenses():
+    if 'username' not in session:
+        flash('Please log in first!', 'danger')
+        return redirect(url_for('login'))
+    
+    all_licenses = list(licenses.find().sort('issue_date', -1))
+    return render_template('manage_licenses.html', licenses=all_licenses)
 
-        # Get business details
-        business = applications.find_one({'_id': ObjectId(inspection['business_id'])})
-        inspector = users.find_one({'_id': ObjectId(inspection['inspector_id'])})
+@app.route('/api/licenses', methods=['GET'])
+def get_licenses():
+    if session.get('role') not in ['admin', 'user']:
+        return jsonify({'error': 'Unauthorized'}), 401
+        
+    try:
+        if session['role'] == 'admin':
+            # Admin sees all licenses
+            license_list = list(licenses.find())
+        else:
+            # Users see only their licenses
+            applications = list(db.applications.find({'username': session['username']}))
+            app_ids = [str(app['_id']) for app in applications]
+            license_list = list(licenses.find({'application_id': {'$in': app_ids}}))
+        
+        # Convert ObjectId to string
+        for license in license_list:
+            license['_id'] = str(license['_id'])
+            license['issue_date'] = license['issue_date'].strftime('%Y-%m-%d')
+            license['expiry_date'] = license['expiry_date'].strftime('%Y-%m-%d')
+        
+        return jsonify({'licenses': license_list})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
-        # Update inspection status
-        inspections.update_one(
-            {'_id': ObjectId(inspection_id)},
+@app.route('/api/license/<license_id>/renew', methods=['POST'])
+def renew_license(license_id):
+    if session.get('role') not in ['admin', 'user']:
+        return jsonify({'error': 'Unauthorized'}), 401
+        
+    try:
+        license_doc = licenses.find_one({'_id': ObjectId(license_id)})
+        if not license_doc:
+            return jsonify({'error': 'License not found'}), 404
+            
+        # Calculate new expiry date
+        new_expiry = datetime.now() + timedelta(days=365)
+        
+        # Add renewal record
+        renewal = {
+            'renewal_date': datetime.now(),
+            'previous_expiry': license_doc['expiry_date'],
+            'new_expiry': new_expiry,
+            'renewed_by': session.get('username')
+        }
+        
+        # Update license
+        licenses.update_one(
+            {'_id': ObjectId(license_id)},
             {
                 '$set': {
-                    'activated': True,
-                    'status': 'in_progress',
-                    'start_time': datetime.now()
+                    'expiry_date': new_expiry,
+                    'status': 'active'
+                },
+                '$push': {
+                    'renewals': renewal
                 }
             }
         )
+        
+        return jsonify({
+            'success': True,
+            'message': 'License renewed successfully',
+            'new_expiry': new_expiry.strftime('%Y-%m-%d')
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
-        # Send notification to business owner
-        business_subject = "Fire Safety Inspection Started"
-        business_body = f"""
-Dear {business.get('contact_person', 'Business Owner')},
+def generate_license_number():
+    """Generate a unique license number"""
+    current_year = datetime.now().year
+    # Get count of licenses in current year
+    count = licenses.count_documents({
+        'issue_date': {
+            '$gte': datetime(current_year, 1, 1),
+            '$lt': datetime(current_year + 1, 1, 1)
+        }
+    })
+    # Format: FIRE-YYYY-XXXXX (where XXXXX is a 5-digit number)
+    return f"FIRE-{current_year}-{(count + 1):05d}"
 
-The fire safety inspector has arrived and started the inspection:
+def create_license(application_id, business_data):
+    """Create a new license when NOC is approved"""
+    try:
+        # Generate license number
+        license_number = generate_license_number()
+        issue_date = datetime.now()
+        expiry_date = issue_date + timedelta(days=365)  # Valid for 1 year
+        
+        license_data = {
+            'license_number': license_number,
+            'application_id': application_id,
+            'business_name': business_data['business_name'],
+            'business_address': business_data['business_address'],
+            'owner_name': business_data.get('contact_person', 'N/A'),
+            'contact_number': business_data.get('contact_number', 'N/A'),
+            'email': business_data.get('email', 'N/A'),
+            'issue_date': issue_date,
+            'expiry_date': expiry_date,
+            'status': 'active',
+            'renewals': [],
+            'created_at': datetime.now()
+        }
+        
+        result = licenses.insert_one(license_data)
+        return str(result.inserted_id)
+    except Exception as e:
+        print(f"Error creating license: {str(e)}")
+        return None
 
-Details:
-- Business: {business['business_name']}
-- Date: {inspection['date']}
-- Time: {datetime.now().strftime('%H:%M')}
-- Inspector: {inspector['name']}
+def approve_application(application_id):
+    if session.get('role') != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        # Get application details
+        application = applications.find_one({'_id': ObjectId(application_id)})
+        if not application:
+            return jsonify({'error': 'Application not found'}), 404
 
-The inspection report will be generated upon completion.
+        # Update application status
+        result = applications.update_one(
+            {'_id': ObjectId(application_id)},
+            {'$set': {
+                'status': 'approved',
+                'approved_by': session['username'],
+                'approved_at': datetime.now(),
+                'valid_until': datetime.now() + timedelta(days=365)
+            }}
+        )
+        
+        if result.modified_count == 0:
+            return jsonify({'error': 'Failed to approve application'}), 500
+
+        # Generate license
+        license_id = create_license(str(application_id), application)
+        if license_id:
+            # Update application with license reference
+            applications.update_one(
+                {'_id': ObjectId(application_id)},
+                {'$set': {'license_id': license_id}}
+            )
+            
+            # Generate and send approval notification
+            send_approval_notification(application, license_id)
+            
+            return jsonify({
+                'success': True,
+                'message': 'Application approved and license generated successfully'
+            })
+        else:
+            return jsonify({'error': 'Failed to generate license'}), 500
+
+    except Exception as e:
+        print(f"Error in approve_application: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/users', methods=['GET'])
+def get_users():
+    if session.get('role') != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 401
+        
+    try:
+        # Get all users except admins
+        user_list = list(users.find({'role': {'$ne': 'admin'}}, 
+                                  {'password': 0}))  # Exclude password field
+        
+        # Convert ObjectId to string for JSON serialization
+        for user in user_list:
+            user['_id'] = str(user['_id'])
+            
+        return jsonify({'users': user_list})
+    except Exception as e:
+        print(f"Error fetching users: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/licenses/create', methods=['POST'])
+def create_new_license():
+    if session.get('role') != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 401
+        
+    try:
+        data = request.get_json()
+        
+        # Validate required fields
+        required_fields = ['userId', 'businessName', 'businessAddress', 
+                         'contactPerson', 'contactNumber', 'email']
+        if not all(field in data for field in required_fields):
+            return jsonify({'error': 'Missing required fields'}), 400
+            
+        # Get user details
+        user = users.find_one({'_id': ObjectId(data['userId'])})
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+            
+        # Generate license number
+        license_number = generate_license_number()
+        
+        # Create license data
+        license_data = {
+            'license_number': license_number,
+            'user_id': ObjectId(data['userId']),
+            'business_name': data['businessName'],
+            'business_address': data['businessAddress'],
+            'owner_name': data['contactPerson'],
+            'contact_number': data['contactNumber'],
+            'email': data['email'],
+            'issue_date': datetime.now(),
+            'expiry_date': datetime.now() + timedelta(days=365),
+            'status': 'active',
+            'renewals': [],
+            'created_at': datetime.now(),
+            'created_by': session['username']
+        }
+        
+        # Insert license
+        result = licenses.insert_one(license_data)
+        
+        # Send email notification
+        subject = "New Fire Safety License Generated"
+        body = f"""
+Dear {data['contactPerson']},
+
+Your Fire Safety License has been generated successfully:
+
+License Details:
+- License Number: {license_number}
+- Business Name: {data['businessName']}
+- Issue Date: {license_data['issue_date'].strftime('%Y-%m-%d')}
+- Expiry Date: {license_data['expiry_date'].strftime('%Y-%m-%d')}
+
+Please keep this license number for future reference. You can view and download
+your license certificate from your dashboard.
 
 Best regards,
 Fire Safety Department
 """
-        send_email(business_subject, business['email'], business_body)
-
-        flash('Inspection activated successfully. You may now begin the inspection.', 'success')
-        return render_template('inspection_form.html', inspection=inspection, business=business)
-
+        send_email(subject, data['email'], body)
+        
+        return jsonify({
+            'success': True,
+            'message': 'License generated successfully',
+            'license_id': str(result.inserted_id)
+        })
+        
     except Exception as e:
-        print(f"Error activating inspection: {str(e)}")
-        flash('Error activating inspection', 'danger')
+        print(f"Error creating license: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/download_license/<license_id>')
+def download_license(license_id):
+    if 'username' not in session:
+        flash('Please log in first!', 'danger')
         return redirect(url_for('login'))
+        
+    try:
+        license_data = licenses.find_one({'_id': ObjectId(license_id)})
+        if not license_data:
+            flash('License not found!', 'danger')
+            return redirect(url_for('manage_licenses'))
+            
+        # Create PDF
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter)
+        styles = getSampleStyleSheet()
+        elements = []
+        
+        # Title
+        elements.append(Paragraph('FIRE SAFETY LICENSE', styles['Title']))
+        elements.append(Spacer(1, 20))
+        
+        # License details
+        elements.extend([
+            Paragraph(f'License Number: {license_data["license_number"]}', styles['Normal']),
+            Paragraph(f'Business Name: {license_data["business_name"]}', styles['Normal']),
+            Paragraph(f'Business Address: {license_data["business_address"]}', styles['Normal']),
+            Paragraph(f'Owner Name: {license_data["owner_name"]}', styles['Normal']),
+            Paragraph(f'Contact Number: {license_data["contact_number"]}', styles['Normal']),
+            Paragraph(f'Issue Date: {license_data["issue_date"].strftime("%Y-%m-%d")}', styles['Normal']),
+            Paragraph(f'Expiry Date: {license_data["expiry_date"].strftime("%Y-%m-%d")}', styles['Normal']),
+            Spacer(1, 20)
+        ])
+        
+        # Terms and conditions
+        elements.extend([
+            Paragraph('Terms and Conditions:', styles['Heading2']),
+            Paragraph('1. This license must be displayed prominently at the business premises.', styles['Normal']),
+            Paragraph('2. Regular fire safety inspections must be conducted.', styles['Normal']),
+            Paragraph('3. Fire safety equipment must be maintained as per regulations.', styles['Normal']),
+            Paragraph('4. License must be renewed before expiry date.', styles['Normal']),
+            Spacer(1, 30)
+        ])
+        
+        # Signature
+        elements.extend([
+            Paragraph('Authorized Signature:', styles['Normal']),
+            Spacer(1, 20),
+            Paragraph('_______________________', styles['Normal']),
+            Paragraph('Fire Safety Department', styles['Normal'])
+        ])
+        
+        doc.build(elements)
+        
+        # Prepare response
+        buffer.seek(0)
+        response = make_response(buffer.getvalue())
+        response.headers["Content-Disposition"] = f'attachment; filename=license_{license_data["license_number"]}.pdf'
+        response.headers["Content-Type"] = "application/pdf"
+        
+        return response
+        
+    except Exception as e:
+        print(f"Error downloading license: {str(e)}")
+        flash('Error generating license PDF!', 'danger')
+        return redirect(url_for('manage_licenses'))
 
-@socketio.on('connect')
-def handle_connect():
-    print('Client connected')
-    emit('connection_response', {'data': 'Connected'})
+@app.route('/export_licenses')
+def export_licenses():
+    if session.get('role') != 'admin':
+        flash('Access denied!', 'danger')
+        return redirect(url_for('login'))
+        
+    try:
+        # Get all licenses
+        all_licenses = list(licenses.find())
+        
+        # Create Excel file
+        output = BytesIO()
+        workbook = Workbook()
+        sheet = workbook.active
+        sheet.title = 'Licenses'
+        
+        # Headers
+        headers = ['License Number', 'Business Name', 'Owner Name', 'Contact Number', 
+                  'Email', 'Issue Date', 'Expiry Date', 'Status']
+        for col, header in enumerate(headers, 1):
+            sheet.cell(row=1, column=col, value=header)
+        
+        # Data
+        for row, license in enumerate(all_licenses, 2):
+            sheet.cell(row=row, column=1, value=license.get('license_number'))
+            sheet.cell(row=row, column=2, value=license.get('business_name'))
+            sheet.cell(row=row, column=3, value=license.get('owner_name'))
+            sheet.cell(row=row, column=4, value=license.get('contact_number'))
+            sheet.cell(row=row, column=5, value=license.get('email'))
+            sheet.cell(row=row, column=6, value=license.get('issue_date').strftime('%Y-%m-%d'))
+            sheet.cell(row=row, column=7, value=license.get('expiry_date').strftime('%Y-%m-%d'))
+            sheet.cell(row=row, column=8, value='Active' if license.get('expiry_date') > datetime.now() else 'Expired')
+        
+        # Save to buffer
+        workbook.save(output)
+        output.seek(0)
+        
+        return send_file(
+            output,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name=f'licenses_export_{datetime.now().strftime("%Y%m%d")}.xlsx'
+        )
+        
+    except Exception as e:
+        print(f"Error exporting licenses: {str(e)}")
+        flash('Error exporting licenses!', 'danger')
+        return redirect(url_for('manage_licenses'))
 
-@socketio.on('disconnect')
-def handle_disconnect():
-    print('Client disconnected')
+@app.route('/api/businesses/<user_id>')
+def get_user_businesses(user_id):
+    if session.get('role') != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 401
+        
+    try:
+        # Get all applications for the user
+        user_applications = list(applications.find({
+            'user_id': ObjectId(user_id),
+            'status': 'approved'  # Only get approved applications
+        }))
+        
+        # Format business data
+        business_list = []
+        for app in user_applications:
+            business_list.append({
+                '_id': str(app['_id']),
+                'business_name': app.get('business_name', ''),
+                'business_address': app.get('business_address', ''),
+                'contact_person': app.get('contact_person', ''),
+                'contact_number': app.get('contact_number', ''),
+                'email': app.get('email', '')
+            })
+            
+        return jsonify({'businesses': business_list})
+    except Exception as e:
+        print(f"Error fetching businesses: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
-@socketio.on_error_default
-def default_error_handler(e):
-    print(f'SocketIO error: {str(e)}')
-    return False
+# @app.route('/api/licenses/create', methods=['POST'])
+# def create_new_license():
+    if session.get('role') != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 401
+        
+    try:
+        data = request.get_json()
+        
+        # Validate required fields
+        required_fields = ['userId', 'businessId', 'businessName', 'businessAddress', 
+                         'contactPerson', 'contactNumber', 'email']
+        if not all(field in data for field in required_fields):
+            return jsonify({'error': 'Missing required fields'}), 400
+            
+        # Get user details
+        user = users.find_one({'_id': ObjectId(data['userId'])})
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+            
+        # Get business application
+        business_app = applications.find_one({'_id': ObjectId(data['businessId'])})
+        if not business_app:
+            return jsonify({'error': 'Business application not found'}), 404
+            
+        # Generate license number
+        license_number = generate_license_number()
+        
+        # Create license data
+        license_data = {
+            'license_number': license_number,
+            'user_id': ObjectId(data['userId']),
+            'application_id': ObjectId(data['businessId']),
+            'business_name': data['businessName'],
+            'business_address': data['businessAddress'],
+            'owner_name': data['contactPerson'],
+            'contact_number': data['contactNumber'],
+            'email': data['email'],
+            'issue_date': datetime.now(),
+            'expiry_date': datetime.now() + timedelta(days=365),
+            'status': 'active',
+            'renewals': [],
+            'created_at': datetime.now(),
+            'created_by': session['username']
+        }
+        
+        # Insert license
+        result = licenses.insert_one(license_data)
+        
+        # Update application with license reference
+        applications.update_one(
+            {'_id': ObjectId(data['businessId'])},
+            {'$set': {'license_id': str(result.inserted_id)}}
+        )
+        
+        # Generate PDF
+        pdf_buffer = generate_license_pdf(license_data)
+        
+        # Send email with PDF attachment
+        subject = "New Fire Safety License Generated"
+        body = f"""
+        Dear {data['contactPerson']},
+
+        Your Fire Safety License has been generated successfully:
+
+        License Details:
+        - License Number: {license_number}
+        - Business Name: {data['businessName']}
+        - Issue Date: {license_data['issue_date'].strftime('%Y-%m-%d')}
+        - Expiry Date: {license_data['expiry_date'].strftime('%Y-%m-%d')}
+
+        Please find your license certificate attached to this email.
+        Keep this license number for future reference.
+
+        Best regards,
+        Fire Safety Department
+        """
+        send_email_with_attachment(
+            subject=subject,
+            recipient=data['email'],
+            body=body,
+            attachment=pdf_buffer.getvalue(),
+            attachment_name=f"license_{license_number}.pdf",
+            attachment_type="application/pdf"
+        )
+        
+        return jsonify({
+            'success': True,
+            'message': 'License generated and sent successfully',
+            'license_id': str(result.inserted_id)
+        })
+        
+    except Exception as e:
+        print(f"Error creating license: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+def generate_license_pdf(license_data):
+    """Generate a PDF for the license"""
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    styles = getSampleStyleSheet()
+    elements = []
+    
+    # Title
+    elements.append(Paragraph('FIRE SAFETY LICENSE', styles['Title']))
+    elements.append(Spacer(1, 20))
+    
+    # License details
+    elements.extend([
+        Paragraph(f'License Number: {license_data["license_number"]}', styles['Normal']),
+        Paragraph(f'Business Name: {license_data["business_name"]}', styles['Normal']),
+        Paragraph(f'Business Address: {license_data["business_address"]}', styles['Normal']),
+        Paragraph(f'Owner Name: {license_data["owner_name"]}', styles['Normal']),
+        Paragraph(f'Contact Number: {license_data["contact_number"]}', styles['Normal']),
+        Paragraph(f'Issue Date: {license_data["issue_date"].strftime("%Y-%m-%d")}', styles['Normal']),
+        Paragraph(f'Expiry Date: {license_data["expiry_date"].strftime("%Y-%m-%d")}', styles['Normal']),
+        Spacer(1, 20)
+    ])
+    
+    # Terms and conditions
+    elements.extend([
+        Paragraph('Terms and Conditions:', styles['Heading2']),
+        Paragraph('1. This license must be displayed prominently at the business premises.', styles['Normal']),
+        Paragraph('2. Regular fire safety inspections must be conducted.', styles['Normal']),
+        Paragraph('3. Fire safety equipment must be maintained as per regulations.', styles['Normal']),
+        Paragraph('4. License must be renewed before expiry date.', styles['Normal']),
+        Spacer(1, 30)
+    ])
+    
+    # Signature
+    elements.extend([
+        Paragraph('Authorized Signature:', styles['Normal']),
+        Spacer(1, 20),
+        Paragraph('_______________________', styles['Normal']),
+        Paragraph('Fire Safety Department', styles['Normal'])
+    ])
+    
+    doc.build(elements)
+    buffer.seek(0)
+    return buffer
+
+def send_email_with_attachment(subject, recipient, body, attachment, attachment_name, attachment_type):
+    """Send email with PDF attachment"""
+    try:
+        msg = Message(subject, recipients=[recipient])
+        msg.body = body
+        msg.attach(attachment_name, attachment_type, attachment)
+        mail.send(msg)
+        return True
+    except Exception as e:
+        print(f"Error sending email with attachment: {str(e)}")
+        return False
 
 if __name__ == '__main__':
     if not os.path.exists(app.config['UPLOAD_FOLDER']):
         os.makedirs(app.config['UPLOAD_FOLDER'])
     socketio.run(app, debug=True)
-
-@app.route('/api/update-profile', methods=['POST'])
-def api_update_profile():
-    try:
-        if 'user_id' not in session:
-            return jsonify({'success': False, 'error': 'Not authenticated'}), 401
-        
-        data = request.get_json()
-        user_id = session['user_id']
-        
-        # Validate required fields
-        required_fields = ['name', 'email', 'phone']
-        if not all(field in data for field in required_fields):
-            return jsonify({'success': False, 'error': 'Missing required fields'}), 400
-            
-        # Update user profile
-        update_result = users.update_one(
-            {'_id': ObjectId(user_id)},
-            {'$set': {
-                'name': data['name'],
-                'email': data['email'],
-                'phone': data['phone'],
-                'updated_at': datetime.now()
-            }}
-        )
-        
-        if update_result.modified_count > 0:
-            # Log the activity
-            log_activity('profile_update', f'User {session.get("username")} updated their profile')
-            return jsonify({'success': True, 'message': 'Profile updated successfully'})
-        else:
-            return jsonify({'success': False, 'error': 'No changes made to profile'}), 400
-            
-    except Exception as e:
-        print(f"Error updating profile: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/api/update-profile-image', methods=['POST'])
-def api_update_profile_image():
-    try:
-        if 'user_id' not in session:
-            return jsonify({'success': False, 'error': 'Not authenticated'}), 401
-            
-        if 'image' not in request.files:
-            return jsonify({'success': False, 'error': 'No image file provided'}), 400
-            
-        file = request.files['image']
-        
-        if file.filename == '':
-            return jsonify({'success': False, 'error': 'No selected file'}), 400
-            
-        if not allowed_file(file.filename):
-            return jsonify({'success': False, 'error': 'Invalid file type'}), 400
-        
-        # Generate secure filename
-        filename = secure_filename(f"{session['user_id']}_{int(time.time())}{os.path.splitext(file.filename)[1]}")
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        
-        # Save the file
-        file.save(filepath)
-        
-        # Update user profile with new image
-        users.update_one(
-            {'_id': ObjectId(session['user_id'])},
-            {'$set': {
-                'profile_image': filename,
-                'updated_at': datetime.now()
-            }}
-        )
-        
-        return jsonify({
-            'success': True,
-            'message': 'Profile image updated successfully',
-            'image_url': url_for('serve_profile_image', filename=filename)
-        })
-        
-    except Exception as e:
-        print(f"Error updating profile image: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/api/reports/<report_id>', methods=['GET'])
-def get_report(report_id):
-    try:
-        if 'user_id' not in session:
-            return jsonify({'success': False, 'error': 'Not authenticated'}), 401
-        
-        # Find the report
-        report = reports.find_one({'_id': ObjectId(report_id)})
-        if not report:
-            return jsonify({'success': False, 'error': 'Report not found'}), 404
-            
-        # Check if user has access to this report
-        user_id = session['user_id']
-        user_role = session.get('role')
-        
-        if user_role not in ['admin', 'inspector'] and str(report.get('user_id')) != str(user_id):
-            return jsonify({'success': False, 'error': 'Access denied'}), 403
-            
-        # Convert ObjectId to string for JSON serialization
-        report['_id'] = str(report['_id'])
-        if 'user_id' in report:
-            report['user_id'] = str(report['user_id'])
-            
-        return jsonify({
-            'success': True,
-            'report': report
-        })
-        
-    except Exception as e:
-        print(f"Error fetching report: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
