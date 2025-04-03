@@ -46,8 +46,7 @@ app = Flask(
     static_folder=os.path.abspath(os.path.join(os.path.dirname(__file__), 'static'))
 )
 CORS(app)  # Enable CORS for all routes
-socketio = SocketIO(app, cors_allowed_origins="*")
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app, cors_allowed_origins="*")  # Remove duplicate initialization
 app.secret_key = 'your_secret_key'  # Change this to a secure secret key
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
 app.config['UPLOAD_FOLDER'] = 'uploads'
@@ -512,14 +511,14 @@ def register():
                     # Check if Aadhaar exists in dataset
                     name, phone = find_user_by_aadhaar(extracted_aadhaar)
                     if name:
-                        # Create user without name verification
+                        # Create user
                         hashed_password = bcrypt.hashpw(
                             form.password.data.encode('utf-8'), 
                             bcrypt.gensalt()
                         )
                         user_data = {
                             'username': form.username.data,
-                            'name': form.name.data,  # Use provided name
+                            'name': form.name.data,
                             'email': form.email.data,
                             'password': hashed_password,
                             'role': form.role.data,
@@ -529,19 +528,13 @@ def register():
                             'created_at': datetime.now()
                         }
                         users.insert_one(user_data)
-                        
-                        # Send registration email
-                        send_registration_email(user_data)
-                        
-                        log_activity('Registration', f"New user registered: {form.username.data}")
-                        flash('Registration successful! Please check your email.', 'success')
+                        flash('Registration successful!', 'success')
                         return redirect(url_for('login'))
                     else:
-                        flash('Aadhaar number not found in our records!', 'danger')
-                        os.remove(filepath)  # Remove uploaded file
+                        flash('Aadhaar verification failed!', 'danger')
                 else:
-                    flash('Could not extract Aadhaar number from the uploaded image!', 'danger')
-                    os.remove(filepath)  # Remove uploaded file
+                    flash('Could not extract Aadhaar number from image!', 'danger')
+                    os.remove(filepath)
             else:
                 flash('Please upload your Aadhaar card photo!', 'danger')
     
@@ -2938,8 +2931,9 @@ Fire Safety Department
                             business_subject,
                             business['email'],
                             business_body,
-                            report_file,
-                            f"inspection_report_{inspection_id}.pdf"
+                            report_file.read(),
+                            f"inspection_report_{inspection_id}.pdf",
+                            'application/pdf'
                         )
 
                 except Exception as e:
@@ -3087,22 +3081,12 @@ def generate_detailed_inspection_report(inspection, business, inspector, report_
         print(f"Error generating detailed report: {str(e)}")
         raise
 
-def send_email_with_attachment(subject, recipient, body, attachment, filename):
+def send_email_with_attachment(subject, recipient, body, attachment, attachment_name, attachment_type):
+    """Send email with PDF attachment"""
     try:
-        msg = Message(
-            subject,
-            sender=app.config['MAIL_USERNAME'],
-            recipients=[recipient]
-        )
+        msg = Message(subject, recipients=[recipient])
         msg.body = body
-        
-        # Attach the PDF report
-        msg.attach(
-            filename=filename,
-            content_type='application/pdf',
-            data=attachment.read()
-        )
-        
+        msg.attach(attachment_name, attachment_type, attachment)
         mail.send(msg)
         return True
     except Exception as e:
@@ -4121,23 +4105,18 @@ def send_email_with_attachment(subject, recipient, body, attachment, attachment_
         msg.attach(attachment_name, attachment_type, attachment)
         mail.send(msg)
         return True
-    except Exception as e:tion
+    except Exception as e:
         print(f"Error sending email with attachment: {str(e)}")
         return False
 
-if __name__ == '__main__':    return send_from_directory(app.static_folder, filename)
-
-
-
-
-    socketio.run(app, debug=True)        os.makedirs(app.config['UPLOAD_FOLDER'])    if not os.path.exists(app.config['UPLOAD_FOLDER']):
-# Add health check endpoint
-@app.route('/health')
-def health_check():
-    return jsonify({'status': 'healthy'}), 200
-
 if __name__ == '__main__':
-
+    # Create upload folder if it doesn't exist
     if not os.path.exists(app.config['UPLOAD_FOLDER']):
         os.makedirs(app.config['UPLOAD_FOLDER'])
+        
+    # Add health check endpoint
+    @app.route('/health')
+    def health_check():
+        return jsonify({'status': 'healthy'}), 200
+        
     socketio.run(app, debug=True)
