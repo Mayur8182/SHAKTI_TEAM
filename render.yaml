@@ -3,6 +3,8 @@ services:
     name: fire-noc
     env: python
     buildCommand: |
+      apt-get update && apt-get install -y tesseract-ocr wkhtmltopdf python3-dev build-essential
+      pip install --upgrade pip setuptools wheel
       pip install --no-cache-dir -r requirements.txt
       npm ci --production
     startCommand: gunicorn --worker-class eventlet -w 1 --threads 4 --worker-connections 1000 --timeout 120 wsgi:app

@@ -1,1 +1,1 @@
-web: gunicorn --worker-class eventlet -w 1 --bind 0.0.0.0:$PORT 'fire.app:create_app()'
+web: gunicorn --worker-class eventlet -w 1 --threads 4 --worker-connections 1000 --timeout 120 'wsgi:app'

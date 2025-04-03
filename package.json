@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "NODE_OPTIONS='--max-old-space-size=512' gunicorn --worker-class eventlet -w 1 'wsgi:app'",
-    "build": "NODE_OPTIONS='--max-old-space-size=512' npm ci --production && pip install -r requirements.txt",
+    "start": "gunicorn --worker-class eventlet -w 1 'wsgi:app'",
+    "build": "pip install --upgrade pip setuptools wheel && pip install -r requirements.txt",
     "dev": "python wsgi.py",
     "postinstall": "if test \"$NODE_ENV\" = \"production\" ; then npm run build ; fi"
   },
