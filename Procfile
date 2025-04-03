@@ -1,1 +1,1 @@
-web: gunicorn --bind 0.0.0.0:10000 'fire.app:app'
+web: gunicorn --bind 0.0.0.0:$PORT 'fire.app:app'

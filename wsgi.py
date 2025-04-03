@@ -14,8 +14,8 @@ except Exception as e:
 
 if __name__ == "__main__":
     try:
-        # Always use port 10000
-        port = int(os.environ.get("PORT", 10000))
+        # Always use port 8000
+        port = int(os.environ.get("PORT", 8000))  # Changed default to 8000
         app.run(host='0.0.0.0', port=port)
     except Exception as e:
         print(f"Error starting server: {str(e)}")
