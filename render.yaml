@@ -5,9 +5,9 @@ services:
     region: singapore
     buildCommand: |
       apt-get update && apt-get install -y tesseract-ocr wkhtmltopdf python3-dev build-essential
-      pip install --upgrade pip setuptools wheel
+      python -m pip install --upgrade pip setuptools wheel
       pip install -r requirements.txt --no-cache-dir
-    startCommand: gunicorn --worker-class sync --workers 1 --threads 4 'wsgi:app'
+    startCommand: gunicorn 'wsgi:app'
     envVars:
       - key: MONGODB_URI
         value: mongodb+srv://mkbharvad8080:Mkb%408080@cluster0.a82h2.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
