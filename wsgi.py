@@ -1,13 +1,21 @@
 import os
 import sys
 
-# Add the project root directory to Python path
+# Add project root to Python path
 project_root = os.path.dirname(os.path.abspath(__file__))
 if project_root not in sys.path:
     sys.path.append(project_root)
 
-from fire.app import app
+try:
+    from fire.app import app
+except Exception as e:
+    print(f"Error importing app: {str(e)}")
+    sys.exit(1)
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))
-    app.run(host='0.0.0.0', port=port)
+    try:
+        port = int(os.environ.get("PORT", 8000))
+        app.run(host='0.0.0.0', port=port)
+    except Exception as e:
+        print(f"Error starting server: {str(e)}")
+        sys.exit(1)

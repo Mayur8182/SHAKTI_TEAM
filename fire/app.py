@@ -76,23 +76,39 @@ def send_email(subject, recipient, body):
         return False
 
 # MongoDB connection
-client = MongoClient('mongodb://localhost:27017/')
-db = client['aek_noc']
+mongo_uri = os.getenv('MONGODB_URI', 'mongodb+srv://mkbharvad8080:Mkb%408080@cluster0.a82h2.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0')
+client = MongoClient(mongo_uri)
+db = client.get_database('aek_noc')
+
+# Initialize collections after database connection
 users = db['users']
 applications = db['applications']
 contacts = db['contacts']
-activities = db['activities']  # New collection for activity logging
+activities = db['activities']
 reports = db['reports']
-licenses = db['licenses']  # New collection for licenses
-
+licenses = db['licenses']
 inspections = db['inspections']
 notifications = db['notifications']
 
-# Add this to your MongoDB initialization in app.py
-db.inspections.create_index([('date', 1)])
-db.inspections.create_index([('status', 1)])
-db.inspections.create_index([('business_id', 1)])
-db.inspections.create_index([('inspector_id', 1)])
+# Create indexes only if they don't exist
+def setup_indexes():
+    try:
+        # Create indexes for inspections collection
+        inspections.create_index([('date', 1)], background=True)
+        inspections.create_index([('status', 1)], background=True)
+        inspections.create_index([('business_id', 1)], background=True)
+        inspections.create_index([('inspector_id', 1)], background=True)
+        
+        # Create indexes for applications collection
+        applications.create_index([('status', 1)], background=True)
+        applications.create_index([('timestamp', -1)], background=True)
+        applications.create_index([('business_name', 1)], background=True)
+    except Exception as e:
+        print(f"Error creating indexes: {str(e)}")
+
+# Initialize indexes after app creation
+setup_indexes()
+
 # Tesseract configuration
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
