@@ -1,8 +1,8 @@
 import multiprocessing
 import os
 
-# Server socket
-bind = f"0.0.0.0:{os.getenv('PORT', '10000')}"  # Updated port
+# Server socket - Always bind to port 10000
+bind = "0.0.0.0:10000"
 backlog = 2048
 
 # Worker configuration
