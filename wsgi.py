@@ -4,30 +4,31 @@ import eventlet
 import logging
 from eventlet import wsgi
 import gc
-from logging.handlers import RotatingFileHandler
-from fire.app import create_app
 
 # Force garbage collection
 gc.collect()
 
-# Patch socket operations
-eventlet.monkey_patch()
-
 # Configure logging
-def setup_logging():
-    handler = RotatingFileHandler('app.log', maxBytes=10000000, backupCount=5)
-    handler.setFormatter(logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    ))
-    handler.setLevel(logging.INFO)
-    return handler
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
 try:
-    # Create Flask app
-    app = create_app(os.getenv('FLASK_ENV', 'development'))
-    app.logger.addHandler(setup_logging())
+    # Patch socket operations
+    eventlet.monkey_patch()
+    
+    # Import the Flask app
+    from fire.app import app
+    
+    # Initialize directories
+    upload_dirs = ['uploads', 'static/profile_images', 'static/reports']
+    for directory in upload_dirs:
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+            
 except Exception as e:
-    logging.error(f"Failed to create app: {str(e)}")
+    logging.error(f"Failed to initialize app: {str(e)}")
     sys.exit(1)
 
 if __name__ == "__main__":
