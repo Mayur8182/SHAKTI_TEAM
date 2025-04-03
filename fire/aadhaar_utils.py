@@ -5,6 +5,14 @@ import os
 
 def extract_aadhaar(image_path):
     try:
+        # Set tesseract path from environment variable
+        tesseract_path = os.getenv('TESSERACT_PATH', '/usr/bin/tesseract')
+        pytesseract.pytesseract.tesseract_cmd = tesseract_path
+        
+        # Verify tesseract is available
+        if not os.path.exists(tesseract_path):
+            raise Exception(f"Tesseract not found at {tesseract_path}")
+        
         img = Image.open(image_path)
         text = pytesseract.image_to_string(img)
         aadhaar_pattern = r'\d{4}\s\d{4}\s\d{4}'

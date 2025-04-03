@@ -10,13 +10,13 @@ workers = 1  # For free tier
 worker_class = 'gthread'  # Changed to gthread
 threads = 4
 worker_connections = 1000
-timeout = 120
-keepalive = 5
+timeout = 300  # Increased timeout
+keepalive = 2
 
 # Logging
 accesslog = '-'
 errorlog = '-'
-loglevel = 'info'
+loglevel = 'debug'  # Changed to debug for more verbose logging
 
 # Process naming
 proc_name = 'fire-noc'
