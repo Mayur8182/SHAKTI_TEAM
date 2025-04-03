@@ -1,17 +1,17 @@
 {% extends "base.html" %}
 
-{% block title %}Home{% endblock %}
+{% block title %}Welcome to Fire NOC System{% endblock %}
 
 {% block content %}
-<div class="jumbotron">
-    <h1 class="display-4">Welcome to Fire NOC System</h1>
-    <p class="lead">Streamline your Fire Safety Compliance process with our online NOC management system.</p>
-    <hr class="my-4">
-    {% if 'username' not in session %}
-    <p>Get started by logging in or registering a new account.</p>
-    <a class="btn btn-primary btn-lg" href="{{ url_for('login') }}" role="button">Login</a>
-    <a class="btn btn-success btn-lg" href="{{ url_for('register') }}" role="button">Register</a>
-    {% else %}
+<div class="container">
+    <div class="jumbotron text-center mt-5">
+        <h1 class="display-4">Fire NOC Management System</h1>
+        <p class="lead">Streamline your Fire Safety Compliance process</p>
+        <hr class="my-4">
+        {% if 'username' not in session %}
+            <p>Please login or register to continue</p>
+            <div class="mt-4">
+                <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg mr-3">Login</a>
     <p>Welcome back, {{ session['username'] }}!</p>
     <a class="btn btn-primary btn-lg" href="{{ url_for('dashboard') }}" role="button">Go to Dashboard</a>
     {% endif %}

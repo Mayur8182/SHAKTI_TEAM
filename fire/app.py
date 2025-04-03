@@ -40,9 +40,10 @@ import string
 import random
 
 # Initialize Flask App
-app = Flask(__name__, 
-    template_folder='templates',ath(os.path.join(os.path.dirname(__file__), 'templates')),
-    static_folder='static'abspath(os.path.join(os.path.dirname(__file__), 'static'))
+app = Flask(
+    __name__,
+    template_folder=os.path.abspath(os.path.join(os.path.dirname(__file__), 'templates')),
+    static_folder=os.path.abspath(os.path.join(os.path.dirname(__file__), 'static'))
 )
 CORS(app)  # Enable CORS for all routes
 socketio = SocketIO(app, cors_allowed_origins="*")
