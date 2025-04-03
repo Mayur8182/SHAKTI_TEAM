@@ -41,10 +41,11 @@ import random
 
 # Initialize Flask App
 app = Flask(__name__, 
-    template_folder='templates',
-    static_folder='static'
+    template_folder='templates',ath(os.path.join(os.path.dirname(__file__), 'templates')),
+    static_folder='static'abspath(os.path.join(os.path.dirname(__file__), 'static'))
 )
 CORS(app)  # Enable CORS for all routes
+socketio = SocketIO(app, cors_allowed_origins="*")
 socketio = SocketIO(app, cors_allowed_origins="*")
 app.secret_key = 'your_secret_key'  # Change this to a secure secret key
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
@@ -117,7 +118,10 @@ def setup_indexes():
 setup_indexes()
 
 # Tesseract configuration
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+if os.name == 'nt':  # Windows
+    pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+else:  # Linux/Unix
+    pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
 
 
 # Add these configurations after app initialization
@@ -4116,11 +4120,23 @@ def send_email_with_attachment(subject, recipient, body, attachment, attachment_
         msg.attach(attachment_name, attachment_type, attachment)
         mail.send(msg)
         return True
-    except Exception as e:
+    except Exception as e:tion
         print(f"Error sending email with attachment: {str(e)}")
         return False
 
+if __name__ == '__main__':    return send_from_directory(app.static_folder, filename)
+
+
+
+
+    socketio.run(app, debug=True)        os.makedirs(app.config['UPLOAD_FOLDER'])    if not os.path.exists(app.config['UPLOAD_FOLDER']):
+# Add health check endpoint
+@app.route('/health')
+def health_check():
+    return jsonify({'status': 'healthy'}), 200
+
 if __name__ == '__main__':
+
     if not os.path.exists(app.config['UPLOAD_FOLDER']):
         os.makedirs(app.config['UPLOAD_FOLDER'])
     socketio.run(app, debug=True)
