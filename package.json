@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "gunicorn --worker-class eventlet -w 1 fire.app:app",
+    "start": "python -m gunicorn --worker-class eventlet -w 1 'fire.app:app'",
     "build": "pip install --upgrade pip && pip install -r requirements.txt && npm install",
     "dev": "python fire/app.py"
   },
