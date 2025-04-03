@@ -123,6 +123,25 @@ if os.name == 'nt':  # Windows
 else:  # Linux/Unix
     pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
 
+def check_tesseract():
+    """Check if Tesseract is properly installed"""
+    try:
+        # Get Tesseract path
+        tesseract_path = pytesseract.pytesseract.tesseract_cmd
+        pytesseract.pytesseract.tesseract_cmd = tesseract_path
+        
+        # Try to use Tesseract
+        test_image = Image.new('RGB', (100, 30), color='white')
+        pytesseract.image_to_string(test_image)
+        return True
+    except Exception as e:
+        app.logger.error(f"Tesseract check failed: {str(e)}")
+        return False
+
+# Add this after app initialization
+tesseract_available = check_tesseract()
+if not tesseract_available:
+    app.logger.warning("Tesseract OCR is not properly configured. Aadhaar verification may not work.")
 
 # Add these configurations after app initialization
 UPLOAD_FOLDER = 'static/profile_images'
@@ -495,33 +514,14 @@ def login():
 def register():
     form = RegistrationForm()
     if form.validate_on_submit():
+        if not tesseract_available:
+            flash('Registration system is temporarily unavailable. Please try again later.', 'danger')
+            return render_template('register.html', form=form)
+            
         if users.find_one({'username': form.username.data}):
             flash('Username already exists!', 'danger')
         else:
             # Handle Aadhaar photo upload
-            aadhaar_photo = form.aadhaar_photo.data
-            if aadhaar_photo:
-                filename = secure_filename(f"aadhaar_{form.username.data}_{int(time.time())}.jpg")
-                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                aadhaar_photo.save(filepath)
-                
-                # Extract Aadhaar number and verify
-                extracted_aadhaar = extract_aadhaar(filepath)
-                if extracted_aadhaar:
-                    # Check if Aadhaar exists in dataset
-                    name, phone = find_user_by_aadhaar(extracted_aadhaar)
-                    if name:
-                        # Create user
-                        hashed_password = bcrypt.hashpw(
-                            form.password.data.encode('utf-8'), 
-                            bcrypt.gensalt()
-                        )
-                        user_data = {
-                            'username': form.username.data,
-                            'name': form.name.data,
-                            'email': form.email.data,
-                            'password': hashed_password,
-                            'role': form.role.data,
                             'aadhaar_number': extracted_aadhaar,
                             'aadhaar_photo': filename,
                             'phone': phone,

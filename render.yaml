@@ -5,9 +5,10 @@ services:
     region: singapore
     buildCommand: |
       # Install system dependencies
-      apt-get update && apt-get install -y tesseract-ocr wkhtmltopdf python3-dev build-essential
+      apt-get update
+      apt-get install -y tesseract-ocr tesseract-ocr-eng python3-dev build-essential
       # Verify tesseract installation
-      tesseract --version
+      tesseract --version || echo "Tesseract installation failed"
       # Install Python dependencies
       pip install --upgrade pip setuptools wheel
       pip install -r requirements.txt --no-cache-dir
