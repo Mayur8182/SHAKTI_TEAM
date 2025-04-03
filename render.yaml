@@ -5,8 +5,9 @@ services:
     region: singapore
     buildCommand: |
       apt-get update && apt-get install -y python3-dev build-essential tesseract-ocr wkhtmltopdf
-      pip install --upgrade pip setuptools wheel
+      python -m pip install --upgrade pip setuptools wheel
       pip install --no-cache-dir -r requirements.txt
+      pip install numpy --upgrade
     startCommand: python -m gunicorn --worker-class eventlet -w 1 --timeout 120 --threads 4 --worker-connections 1000 'wsgi:app'
     envVars:
       - key: MONGODB_URI
@@ -36,7 +37,7 @@ services:
       - key: PYTHONUNBUFFERED
         value: "true"
     plan: starter
-    python_version: 3.9.0
+    python_version: 3.11.0
     buildFilter:
       paths:
       - requirements.txt
