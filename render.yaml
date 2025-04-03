@@ -7,7 +7,6 @@ services:
       apt-get update && apt-get install -y tesseract-ocr wkhtmltopdf python3-dev build-essential
       python -m pip install --upgrade pip setuptools wheel
       pip install --no-cache-dir -r requirements.txt
-      pip install numpy --no-cache-dir
     startCommand: python -m gunicorn --worker-class eventlet -w 1 --timeout 120 --threads 4 --worker-connections 1000 'wsgi:app'
     envVars:
       - key: MONGODB_URI
@@ -36,8 +35,8 @@ services:
         value: INFO
       - key: PYTHONUNBUFFERED
         value: "true"
-    plan: starter
     python_version: 3.9.0
+    plan: starter
     buildFilter:
       paths:
       - requirements.txt
