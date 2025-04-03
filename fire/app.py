@@ -35,7 +35,7 @@ import csv
 from io import TextIOWrapper
 from flask_cors import CORS
 import pdfkit
-from aadhaar_utils import extract_aadhaar, find_user_by_aadhaar
+from fire.utils.aadhaar_utils import extract_aadhaar, find_user_by_aadhaar
 import string
 import random
 

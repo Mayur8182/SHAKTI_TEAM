@@ -5,8 +5,9 @@ services:
     region: singapore
     buildCommand: |
       apt-get update && apt-get install -y tesseract-ocr wkhtmltopdf python3-dev build-essential
-      python -m pip install --upgrade pip setuptools wheel
+      pip install --upgrade pip setuptools wheel
       pip install -r requirements.txt --no-cache-dir
+      export PYTHONPATH=/opt/render/project/src/
     startCommand: gunicorn 'wsgi:app'
     envVars:
       - key: MONGODB_URI
