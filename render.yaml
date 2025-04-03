@@ -3,6 +3,7 @@ services:
     name: fire-noc
     env: python
     buildCommand: |
+      apt-get update && apt-get install -y tesseract-ocr
       pip install --upgrade pip
       pip install -r requirements.txt
       npm install
@@ -22,6 +23,14 @@ services:
         value: mkbharvad534@gmail.com
       - key: MAIL_PASSWORD
         value: dwtp fmiq miyl ccvq
+      - key: JWT_SECRET_KEY
+        value: your_jwt_secret_here
+      - key: FIREBASE_API_KEY
+        value: your_firebase_api_key
+      - key: GOOGLE_MAPS_API_KEY
+        value: your_google_maps_api_key
+      - key: TESSERACT_CMD
+        value: /usr/bin/tesseract
     python_version: 3.9.0
     buildFilter:
       paths:
@@ -29,3 +38,9 @@ services:
       - fire/**
       - static/**
       - templates/**
+    healthCheckPath: /health
+    autoDeploy: true
+    disk:
+      name: uploads
+      mountPath: /opt/render/project/src/uploads
+      sizeGB: 1
