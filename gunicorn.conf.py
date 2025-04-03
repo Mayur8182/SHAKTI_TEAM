@@ -2,12 +2,12 @@ import multiprocessing
 import os
 
 # Server socket
-bind = f"0.0.0.0:{os.getenv('PORT', '8000')}"
+bind = f"0.0.0.0:{os.getenv('PORT', '10000')}"  # Updated port
 backlog = 2048
 
-# Worker processes
-workers = 1
-worker_class = 'sync'  # Changed from eventlet to sync
+# Worker configuration
+workers = 1  # For free tier
+worker_class = 'gthread'  # Changed to gthread
 threads = 4
 worker_connections = 1000
 timeout = 120
