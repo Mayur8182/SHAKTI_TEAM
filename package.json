@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "build": "npm install && pip install --upgrade pip && pip install -r requirements.txt",
-    "dev": "nodemon index.js",
+    "start": "NODE_OPTIONS='--max-old-space-size=512' gunicorn --worker-class eventlet -w 1 'wsgi:app'",
+    "build": "NODE_OPTIONS='--max-old-space-size=512' npm ci --production && pip install -r requirements.txt",
+    "dev": "python wsgi.py",
     "postinstall": "if test \"$NODE_ENV\" = \"production\" ; then npm run build ; fi"
   },
   "engines": {

@@ -3,11 +3,9 @@ services:
     name: fire-noc
     env: python
     buildCommand: |
-      apt-get update && apt-get install -y tesseract-ocr wkhtmltopdf
-      pip install --upgrade pip
-      pip install -r requirements.txt
-      npm install
-    startCommand: gunicorn --worker-class eventlet -w 1 --bind 0.0.0.0:$PORT --timeout 120 --log-level info --error-logfile gunicorn-error.log --access-logfile gunicorn-access.log 'wsgi:app'
+      pip install --no-cache-dir -r requirements.txt
+      npm ci --production
+    startCommand: gunicorn --worker-class eventlet -w 1 --threads 4 --worker-connections 1000 --timeout 120 wsgi:app
     envVars:
       - key: MONGODB_URI
         value: mongodb+srv://mkbharvad8080:Mkb%408080@cluster0.a82h2.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
@@ -35,6 +33,7 @@ services:
         value: INFO
       - key: PYTHONUNBUFFERED
         value: "true"
+    plan: starter
     python_version: 3.9.0
     buildFilter:
       paths:
@@ -58,8 +57,12 @@ services:
       - fire-noc.onrender.com
     scaling:
       minInstances: 1
-      maxInstances: 3
-      targetMemoryPercent: 80
+      maxInstances: 1
+      targetMemoryPercent: 75
+    resources:
+      cpu: 1x
+      memory: 512MB
+      storage: 512MB
     headers:
       - path: /*
         name: X-Frame-Options
