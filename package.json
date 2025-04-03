@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "python fire/app.py",
-    "build": "pip install -r requirements.txt && npm install",
-    "dev": "nodemon index.js"
+    "start": "gunicorn --worker-class eventlet -w 1 fire.app:app",
+    "build": "pip install --upgrade pip && pip install -r requirements.txt && npm install",
+    "dev": "python fire/app.py"
   },
   "engines": {
     "node": ">=14.0.0",

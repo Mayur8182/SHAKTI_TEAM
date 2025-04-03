@@ -2,8 +2,11 @@ services:
   - type: web
     name: fire-noc
     env: python
-    buildCommand: pip install -r requirements.txt && npm install
-    startCommand: gunicorn fire.app:app
+    buildCommand: |
+      pip install --upgrade pip
+      pip install -r requirements.txt
+      npm install
+    startCommand: gunicorn --worker-class eventlet -w 1 fire.app:app
     envVars:
       - key: MONGODB_URI
         value: mongodb+srv://mkbharvad8080:Mkb%408080@cluster0.a82h2.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
@@ -19,3 +22,9 @@ services:
         value: mkbharvad534@gmail.com
       - key: MAIL_PASSWORD
         value: dwtp fmiq miyl ccvq
+    buildFilter:
+      paths:
+      - requirements.txt
+      - fire/**
+      - static/**
+      - templates/**
