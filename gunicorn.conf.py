@@ -6,8 +6,9 @@ bind = f"0.0.0.0:{os.getenv('PORT', '8000')}"
 backlog = 2048
 
 # Worker processes
-workers = 1  # For eventlet/gevent
-worker_class = 'eventlet'
+workers = 1
+worker_class = 'sync'  # Changed from eventlet to sync
+threads = 4
 worker_connections = 1000
 timeout = 120
 keepalive = 5

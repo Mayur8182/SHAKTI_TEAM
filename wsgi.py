@@ -32,16 +32,5 @@ except Exception as e:
     sys.exit(1)
 
 if __name__ == "__main__":
-    try:
-        port = int(os.environ.get("PORT", 8000))
-        wsgi.server(
-            eventlet.listen(('0.0.0.0', port)), 
-            app,
-            debug=False,
-            log_output=True,
-            keepalive=False,
-            max_size=10000
-        )
-    except Exception as e:
-        logging.error(f"Failed to start server: {str(e)}")
-        sys.exit(1)
+    port = int(os.environ.get("PORT", 8000))
+    app.run(host='0.0.0.0', port=port)

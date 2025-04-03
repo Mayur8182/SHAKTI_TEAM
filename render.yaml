@@ -7,7 +7,7 @@ services:
       apt-get update && apt-get install -y tesseract-ocr wkhtmltopdf python3-dev build-essential
       python -m pip install --upgrade pip setuptools wheel
       pip install --no-cache-dir -r requirements.txt
-    startCommand: python -m gunicorn --worker-class eventlet -w 1 --timeout 120 --threads 4 --worker-connections 1000 'wsgi:app'
+    startCommand: gunicorn 'fire.app:app' --bind=0.0.0.0:$PORT --workers=1 --threads=4 --timeout=120
     envVars:
       - key: MONGODB_URI
         value: mongodb+srv://mkbharvad8080:Mkb%408080@cluster0.a82h2.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
