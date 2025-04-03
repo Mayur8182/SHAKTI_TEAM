@@ -22,6 +22,11 @@ app.get('/', (req, res) => {
     res.send('Server is running');
 });
 
+// Health check route
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'OK', message: 'Service is healthy' });
+});
+
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
